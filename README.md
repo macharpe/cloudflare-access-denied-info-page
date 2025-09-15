@@ -80,15 +80,6 @@ graph TB
     K --> H
     K --> J
     L --> I
-
-    style A fill:#ff6b6b
-    style B fill:#4ecdc4
-    style E fill:#45b7d1
-    style C fill:#a8e6cf
-    style K fill:#fbbf24
-    style L fill:#fbbf24
-    style M fill:#fbbf24
-    style N fill:#fbbf24
 ```
 
 ## 🚀 Quick Start
