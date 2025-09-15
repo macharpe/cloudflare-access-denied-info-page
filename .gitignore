@@ -1,0 +1,25 @@
+# Dependencies
+node_modules
+
+# Wrangler
+/.wrangler
+
+# System files
+.DS_Store
+
+# Logs
+npm-debug.log*
+
+# Claude
+CLAUDE.md
+.claude
+
+# Development files
+debug-site.js
+current-layout.png
+
+# Archive
+README.md.bak
+
+# Playwright MCP
+.playwright-mcp

@@ -1,0 +1,30 @@
+{
+  "name": "access-denied-info-page",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Cloudflare Access Denied Information Page - Enterprise-grade access denied page with inline HTML/CSS/JS solution",
+  "main": "src/main.js",
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev"
+  },
+  "keywords": [
+    "cloudflare",
+    "workers",
+    "access",
+    "zero-trust",
+    "security",
+    "identity"
+  ],
+  "author": "Your Organization",
+  "license": "MIT",
+  "devDependencies": {
+    "wrangler": "^4.36.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "playwright": "^1.55.0"
+  }
+}
