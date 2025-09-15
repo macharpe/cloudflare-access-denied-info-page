@@ -202,7 +202,6 @@ Create a **Custom Token** in your Cloudflare dashboard with these **exact permis
 | `PRIMARY_COLOR` | Primary theme color | `#3498db` |
 | `SECONDARY_COLOR` | Secondary theme color | `#2ecc71` |
 
-
 ## 📚 API Endpoints
 
 The Worker exposes these internal endpoints:
@@ -254,7 +253,6 @@ wrangler dev
 wrangler deploy
 ```
 
-
 ## 🤝 Contributing
 
 1. Fork the repository
@@ -262,7 +260,6 @@ wrangler deploy
 3. Commit changes (`git commit -m 'Add AmazingFeature'`)
 4. Push branch (`git push origin feature/AmazingFeature`)
 5. Open Pull Request
-
 
 ## 🙏 Acknowledgments
 
@@ -272,6 +269,12 @@ This project is based on and extends the original [cf-identity-dynamic](https://
 - [Cloudflare Workers](https://workers.cloudflare.com/) - Serverless compute platform
 - [Cloudflare Access](https://www.cloudflare.com/zero-trust/products/access/) - Zero Trust access control
 - [Cloudflare GraphQL API](https://developers.cloudflare.com/analytics/graphql-api/) - Analytics and audit logs
+
+## 🗺️ Roadmap
+
+### Planned Improvements
+
+- **🔍 Enhance OS Detection** - Current OS detection logic is not robust and relies on hardcoded version patterns. Plan to implement multi-layered detection with confidence scoring, user-agent analysis, and future-proof pattern matching.
 
 ## 📝 License
 
