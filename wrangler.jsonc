@@ -1,0 +1,28 @@
+{
+  "name": "access-denied-info-page",
+  "account_id": "6b3bd3e4a3c3f11b51c67f98641a8688",
+  "workers_dev": false,
+  "compatibility_date": "2024-11-25",
+  "main": "src/main.js",
+  "routes": [
+    {
+      "pattern": "denied.macharpe.com",
+      "custom_domain": true
+    }
+  ],
+  "vars": {
+    // BEARER_TOKEN (Defined with wrangler secret put)
+    "CORS_ORIGIN": "https://denied.macharpe.com", // Allow CORS from the main domain
+    "ACCOUNT_ID": "6b3bd3e4a3c3f11b51c67f98641a8688",
+    "ORGANIZATION_NAME": "macharpe",
+    "DEBUG": "false",
+    "TARGET_GROUP": "ZeroTrust", // Define the "special group" that you want to use for notification
+    "SUPPORT_EMAIL": "support@macharpe.com", // Contact support email address
+    "PRIMARY_COLOR": "#3498db", // Primary theme color
+    "SECONDARY_COLOR": "#2ecc71" // Secondary theme color
+  },
+  // Observability - provides Worker analytics and logs
+  "observability": {
+    "enabled": true
+  }
+}
