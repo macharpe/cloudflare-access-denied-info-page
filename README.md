@@ -3,7 +3,7 @@
 [![Cloudflare Workers](https://img.shields.io/badge/Cloudflare-Workers-orange?style=for-the-badge&logo=cloudflare)](https://workers.cloudflare.com/)
 [![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)](https://javascript.info/)
 [![Security](https://img.shields.io/badge/Security-First-green?style=for-the-badge&logo=shield)](https://workers.cloudflare.com/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg?style=for-the-badge)](https://www.gnu.org/licenses/gpl-3.0)
 
 > **Note**: This project is based on and extends the original [cf-identity-dynamic](https://github.com/cloudflare/cf-identity-dynamic) repository by Cloudflare.
 
@@ -95,7 +95,7 @@ graph TB
 
 1. **Clone and setup**
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/macharpe/cloudflare-access-denied-info-page.git
    cd access-denied-info-page
    npm install
    ```
@@ -254,15 +254,6 @@ wrangler dev
 wrangler deploy
 ```
 
-### Theme Customization
-
-1. Set `DEBUG = "true"` in wrangler.jsonc
-2. Deploy the Worker
-3. Visit `https://denied.yourdomain.com/debug`
-4. Upload logo and configure colors
-5. Set `DEBUG = "false"` and redeploy
-
-
 
 ## 🤝 Contributing
 
@@ -272,12 +263,6 @@ wrangler deploy
 4. Push branch (`git push origin feature/AmazingFeature`)
 5. Open Pull Request
 
-### Development Guidelines
-- Follow S-Tier design principles
-- Maintain security best practices
-- Add comprehensive error handling
-- Test CORS functionality thoroughly
-- Validate API token permissions
 
 ## 🙏 Acknowledgments
 
@@ -290,7 +275,7 @@ This project is based on and extends the original [cf-identity-dynamic](https://
 
 ## 📝 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the GPL-3.0 License - see the [LICENSE](LICENSE) file for details.
 
 ---
 
