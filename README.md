@@ -24,8 +24,15 @@ A professional, enterprise-grade access denied page built with **TypeScript** an
 - ✅ **ESLint Integration** - Professional code quality and consistency
 
 <div align="center">
-  <img src="assets/20241126_121117_example-page.png" alt="Example Access Denied Page" width="800">
+  <img src="assets/access_denied_info_page.png" alt="Example Access Denied Page" width="800">
   <p><em>Modern access denied page with real-time user and device information</em></p>
+</div>
+
+### 🎥 Live Demo
+
+<div align="center">
+  <img src="assets/demo_access_denied_info_page.gif" alt="Live Demo - Access Denied Info Page" width="800">
+  <p><em>Interactive demonstration showing dark mode toggle, expandable tiles, copy functionality, and modal popups</em></p>
 </div>
 
 
@@ -156,7 +163,7 @@ Create a **Custom Token** in your Cloudflare dashboard with these **exact permis
 After deploying your access denied page, you need to configure your Cloudflare Access applications to redirect users to your custom page when access is denied.
 
 <div align="center">
-  <img src="assets/20241126_113713_image.png" alt="Cloudflare Access Block Page Configuration" width="600">
+  <img src="assets/block_page_setup.png" alt="Cloudflare Access Block Page Configuration" width="600">
   <p><em>Configure block pages in your Cloudflare Access application settings</em></p>
 </div>
 

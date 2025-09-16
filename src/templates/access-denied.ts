@@ -262,11 +262,35 @@ export async function generateAccessDeniedPage(_request: Request, _env: Cloudfla
 }
 
 [data-theme="dark"] .history-item .title {
-  color: var(--color-neutral-900);
+  color: var(--color-neutral-400);
 }
 
 [data-theme="dark"] .history-item .details {
-  color: var(--color-neutral-500);
+  color: var(--color-neutral-300);
+}
+
+/* Theme Toggle Button */
+.theme-toggle {
+  background: var(--color-neutral-50);
+  border: 1px solid var(--color-neutral-200);
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3);
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  transition: all var(--transition-fast);
+  outline: none;
+  color: var(--color-neutral-900);
+}
+
+.theme-toggle:hover {
+  background: var(--color-neutral-100);
+  transform: scale(1.05);
+  border-color: var(--color-neutral-300);
+}
+
+.theme-toggle:focus-visible {
+  outline: var(--focus-ring-width) solid var(--color-focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }
 
 /* Component State Mixins */
@@ -653,7 +677,7 @@ body{
       "    '<div class=\"header\">',",
       "    '<div style=\"display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: var(--space-4);\">',",
       "      '<div></div>',",
-      "      '<button id=\"theme-toggle\" onclick=\"toggleTheme()\" style=\"background: var(--color-interactive-default); border: 1px solid var(--color-neutral-200); border-radius: var(--radius-md); padding: var(--space-2) var(--space-3); cursor: pointer; font-size: var(--font-size-sm); transition: all var(--transition-fast); outline: none;\" onmouseover=\"this.style.background=\\\"var(--color-interactive-hover)\\\"; this.style.transform=\\\"scale(1.05)\\\"\" onmouseout=\"this.style.background=\\\"var(--color-interactive-default)\\\"; this.style.transform=\\\"scale(1)\\\"\" onfocus=\"this.style.outline=\\\"var(--focus-ring-width) solid var(--color-focus-ring)\\\"; this.style.outlineOffset=\\\"var(--focus-ring-offset)\\\"\">🌙 Dark Mode</button>',",
+      "      '<button id=\"theme-toggle\" class=\"theme-toggle\" onclick=\"toggleTheme()\">🌙 Dark Mode</button>',",
       "    '</div>',",
       "    '<h1>Access Denied</h1>',",
       "    '<p>You do not have permission to access this resource. Here is information about your current session and device status.</p>',",
