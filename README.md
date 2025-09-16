@@ -1,41 +1,33 @@
 # 🛡️ Cloudflare Access Denied Information Page
 
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https%3A%2F%2Fgithub.com%2Fmacharpe%2Fcloudflare-access-denied-info-page)
+
 [![Cloudflare Workers](https://img.shields.io/badge/Cloudflare-Workers-orange?style=for-the-badge&logo=cloudflare)](https://workers.cloudflare.com/)
-[![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)](https://javascript.info/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![ESLint](https://img.shields.io/badge/ESLint-4B32C3?style=for-the-badge&logo=eslint&logoColor=white)](https://eslint.org/)
 [![Security](https://img.shields.io/badge/Security-First-green?style=for-the-badge&logo=shield)](https://workers.cloudflare.com/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg?style=for-the-badge)](https://www.gnu.org/licenses/gpl-3.0)
 
 > **Note**: This project is based on and extends the original [cf-identity-dynamic](https://github.com/cloudflare/cf-identity-dynamic) repository by Cloudflare.
 
-A professional, enterprise-grade access denied page built entirely with **Cloudflare Workers** that provides enriched user feedback and comprehensive device posture information. This solution dynamically fetches user identity data and presents it in a modern, S-Tier design system compliant interface.
+A professional, enterprise-grade access denied page built with **TypeScript** and **Cloudflare Workers** that provides enriched user feedback and comprehensive device posture information. This solution dynamically fetches user identity data and presents it in a modern, S-Tier design system compliant interface.
 
-## ⚠️ Important Notice
+## ⚠️ Production Ready
 
-**This project is currently work in progress.** The current version has been tested and works with:
+**This project is production-ready** and has been tested with:
 
-- ✅ **Windows machines** - Full device posture and compliance monitoring
+- ✅ **Windows machines** - Full device posture and compliance monitoring with expandable UI
 - ✅ **macOS machines** - Complete device information and security checks
-- ✅ **OKTA as Identity Provider** - Using SAML authentication
-
-Other operating systems and identity providers may have limited functionality or require additional configuration.
+- ✅ **OKTA as Identity Provider** - Enhanced SAML authentication with provider name resolution
+- ✅ **Azure AD/Entra ID** - OIDC integration support
+- ✅ **Complete TypeScript** - Full type safety and modern development tooling
+- ✅ **ESLint Integration** - Professional code quality and consistency
 
 <div align="center">
   <img src="assets/20241126_121117_example-page.png" alt="Example Access Denied Page" width="800">
   <p><em>Modern access denied page with real-time user and device information</em></p>
 </div>
 
-## ✨ Features
-
-- 🔐 **Real-time WARP Status** - Live WARP connectivity detection and organization verification
-- 🏢 **Organization Membership** - Validates user organization assignment with visual indicators
-- 🔑 **Device Posture Monitoring** - Complete device compliance and security posture checks
-- 👥 **Group Management** - Identity provider group information and special group notifications
-- 📱 **Comprehensive Device Info** - Detailed device model, OS version, and browser details
-- 📊 **Access History** - Recent login attempts and failure analysis via GraphQL
-- 🎨 **Professional Design System** - S-Tier UI with semantic colors, consistent typography, and accessibility
-- ⚡ **Lightning Fast** - Single Worker deployment with 3ms startup time
-- 🔒 **Security Hardened** - Comprehensive security headers and CORS protection
-- 🚀 **Zero Build Dependencies** - Inline HTML/CSS/JS solution bypassing static asset issues
 
 ## 🏗️ Architecture
 
@@ -44,7 +36,7 @@ graph TB
     subgraph "User Browser"
         A[User Access Attempt]
         B[Access Denied Page]
-        C[Inline HTML/CSS/JS]
+        C[TypeScript UI Components]
     end
 
     subgraph "Cloudflare Edge"
@@ -57,13 +49,15 @@ graph TB
         H[Device Management API]
         I[GraphQL Analytics API]
         J[Zero Trust API]
+        K[IDP Details API]
     end
 
     subgraph "Worker API Endpoints"
-        K["API: User Details"]
-        L["API: History"]
-        M["API: Environment"]
-        N["API: JavaScript"]
+        L["API: User Details"]
+        M["API: History"]
+        N["API: Network Info"]
+        O["API: Environment"]
+        P["API: IDP Details"]
     end
 
     A --> D
@@ -71,24 +65,17 @@ graph TB
     E --> B
     E --> C
 
-    C --> K
     C --> L
     C --> M
     C --> N
+    C --> O
+    C --> P
 
-    K --> G
-    K --> H
-    K --> J
-    L --> I
-
-    style A fill:#ff6b6b
-    style B fill:#4ecdc4
-    style E fill:#45b7d1
-    style C fill:#a8e6cf
-    style K fill:#fbbf24
-    style L fill:#fbbf24
-    style M fill:#fbbf24
-    style N fill:#fbbf24
+    L --> G
+    L --> H
+    L --> J
+    M --> I
+    P --> K
 ```
 
 ## 🚀 Quick Start
@@ -104,8 +91,8 @@ graph TB
 
 1. **Clone and setup**
    ```bash
-   git clone <repository-url>
-   cd access-denied-info-page
+   git clone https://github.com/macharpe/cloudflare-access-denied-info-page.git
+   cd cloudflare-access-denied-info-page
    npm install
    ```
 
@@ -123,7 +110,7 @@ graph TB
 
 4. **Deploy**
    ```bash
-   wrangler deploy
+   npm run deploy
    ```
 
 ## 🔑 API Token Configuration
@@ -134,6 +121,7 @@ Create a **Custom Token** in your Cloudflare dashboard with these **exact permis
 
 | **Resource Type** | **Permission** | **Purpose** |
 |---|---|---|
+| **Access: Organizations, Identity Providers, and Groups** | Read | **CRITICAL** - IDP details and group information |
 | **Access: Device Posture** | Read | Device compliance and posture information |
 | **Access: Audit Logs** | Read | **CRITICAL** - Powers login history via GraphQL queries |
 | **Zero Trust** | Read | WARP device details and connection status |
@@ -143,13 +131,7 @@ Create a **Custom Token** in your Cloudflare dashboard with these **exact permis
 
 1. **Cloudflare Dashboard** → [API Tokens](https://dash.cloudflare.com/profile/api-tokens)
 2. **Create Token** → **Custom token**
-3. **Add Permissions**:
-   ```
-   Account → Access: Device Posture → Read
-   Account → Access: Audit Logs → Read
-   Account → Zero Trust → Read
-   Account → Access: Apps and Policies → Read
-   ```
+3. **Add All 5 Permissions Above**
 4. **Select Account** → Choose your Cloudflare account
 5. **Create and Copy** the generated token
 6. **Add to Worker**:
@@ -157,14 +139,56 @@ Create a **Custom Token** in your Cloudflare dashboard with these **exact permis
    wrangler secret put BEARER_TOKEN
    ```
 
-### ⚠️ Troubleshooting
+### ⚠️ Common Issues & Solutions
 
 | Issue | Missing Permission |
 |-------|-------------------|
 | "Unknown App" in history | `Access: Apps and Policies` read |
+| IDP shows generic "SAML" instead of provider name | `Access: Organizations, Identity Providers, and Groups` read |
 | No device information | `Access: Device Posture` or `Zero Trust` read |
 | No login history / 500 errors | `Access: Audit Logs` read |
 | General 500 errors | Token expired or insufficient permissions |
+
+## 🔗 Configuring Cloudflare Access Applications
+
+### Setting Up Block Pages in Access Apps
+
+After deploying your access denied page, you need to configure your Cloudflare Access applications to redirect users to your custom page when access is denied.
+
+<div align="center">
+  <img src="assets/20241126_113713_image.png" alt="Cloudflare Access Block Page Configuration" width="600">
+  <p><em>Configure block pages in your Cloudflare Access application settings</em></p>
+</div>
+
+#### Configuration Steps:
+
+1. **Navigate to Access Application**
+   - Go to **Zero Trust** → **Access** → **Applications**
+   - Select the application you want to configure
+
+2. **Configure Block Pages**
+   - Scroll to the **Block page** section
+   - Select **Redirect URL** for both:
+     - **Identity failure block page**
+     - **Non-identity failure block page**
+
+3. **Set Redirect URLs**
+   - **Deny URL**: `https://your-domain-here.com/access-denied`
+   - Replace `your-domain-here.com` with your actual domain
+   - Both identity and non-identity failures should point to the same URL
+
+4. **Save Configuration**
+   - Click **Save** to apply the block page settings
+   - Test by attempting to access the protected application without proper authentication
+
+### Example Configuration:
+```
+Identity failure block page: Redirect URL
+Deny URL: https://denied.yourdomain.com
+
+Non-identity failure block page: Redirect URL
+Deny URL: https://denied.yourdomain.com
+```
 
 ## ⚙️ Configuration
 
@@ -175,7 +199,7 @@ Create a **Custom Token** in your Cloudflare dashboard with these **exact permis
   "name": "access-denied-info-page",
   "account_id": "your-account-id",
   "workers_dev": false,
-  "main": "src/main.js",
+  "main": "src/main.ts",
   "routes": [
     {
       "pattern": "denied.yourdomain.com",
@@ -186,11 +210,10 @@ Create a **Custom Token** in your Cloudflare dashboard with these **exact permis
     "CORS_ORIGIN": "https://denied.yourdomain.com",
     "ACCOUNT_ID": "your-account-id",
     "ORGANIZATION_NAME": "YourOrg",
+    "ORGANIZATION_DOMAIN": "yourdomain.com",
+    "ACCESS_DOMAIN": "denied.yourdomain.com",
     "TARGET_GROUP": "SpecialGroup",
-    "DEBUG": "false",
-    "SUPPORT_EMAIL": "support@yourdomain.com",
-    "PRIMARY_COLOR": "#3498db",
-    "SECONDARY_COLOR": "#2ecc71"
+    "HISTORY_HOURS_BACK": "2"
   },
   "observability": {
     "enabled": true
@@ -204,13 +227,80 @@ Create a **Custom Token** in your Cloudflare dashboard with these **exact permis
 |----------|---------|---------|
 | `ACCOUNT_ID` | API requests and org verification | `6b3bd3e4a3c3f11b51c67f98641a8688` |
 | `ORGANIZATION_NAME` | Display name in UI | `YourCompany` |
+| `ORGANIZATION_DOMAIN` | Organization domain | `yourdomain.com` |
+| `ACCESS_DOMAIN` | Access denied page domain | `denied.yourdomain.com` |
 | `CORS_ORIGIN` | CORS allowed origin | `https://denied.yourdomain.com` |
 | `TARGET_GROUP` | Special group to highlight | `Administrators` |
-| `DEBUG` | Enable debug mode | `false` (production) |
-| `SUPPORT_EMAIL` | Support contact | `support@yourdomain.com` |
-| `PRIMARY_COLOR` | Primary theme color | `#3498db` |
-| `SECONDARY_COLOR` | Secondary theme color | `#2ecc71` |
+| `HISTORY_HOURS_BACK` | Hours back for access history | `2` (default) |
 
+## 🧩 Modern Application Structure
+
+### Modular TypeScript Architecture
+
+```
+src/
+├── main.ts                    # TypeScript entry point with event listeners
+├── types/
+│   └── index.ts              # Comprehensive type definitions
+├── handlers/
+│   ├── router.ts             # Request routing logic
+│   └── api.ts                # API endpoint handlers with IDP integration
+├── templates/
+│   └── access-denied.ts      # JavaScript template generation system
+└── utils/
+    ├── cors.ts               # Dynamic CORS configuration
+    └── auth.ts               # JWT parsing and identity fetching
+```
+
+### Key Features
+
+- **TypeScript-First**: Full type safety with comprehensive interfaces
+- **Enhanced IDP Integration**: `fetchIdpDetails()` with fallback logic
+- **Professional UI Components**: S-Tier design with hover effects
+- **Expandable Components**: Group Membership and Device Compliance tiles
+- **Copy Functionality**: Complete user information extraction with visual feedback
+- **Modal System**: Dual modal implementation for detailed information display
+
+## 🔧 Development
+
+### Development Commands
+
+```bash
+# TypeScript compilation
+npm run build
+
+# Type checking only
+npm run typecheck
+
+# ESLint + TypeScript checking
+npm run lint
+
+# Auto-fix ESLint issues
+npm run lint:fix
+
+# Start development server
+npm run dev
+
+# Deploy to Cloudflare
+npm run deploy
+```
+
+### Local Development
+
+```bash
+# Install dependencies
+npm install
+
+# Start development server with hot reload
+wrangler dev
+```
+
+### Production Deployment
+
+```bash
+# Build and deploy
+npm run deploy
+```
 
 ## 📚 API Endpoints
 
@@ -218,58 +308,14 @@ The Worker exposes these internal endpoints:
 
 | Endpoint | Method | Description | Response |
 |----------|--------|-------------|----------|
-| `/` | GET | Main page with inline HTML/CSS/JS | HTML |
-| `/api/js` | GET | Dynamic JavaScript application code | JavaScript |
-| `/api/userdetails` | GET | Combined identity, device, and posture data | JSON |
-| `/api/history` | GET | Recent access failures via GraphQL | JSON |
-| `/api/env` | GET | Environment vars and theme configuration | JSON |
+| `/` | GET | Main page with TypeScript UI components | HTML |
+| `/api/userdetails` | GET | Aggregated identity, device, and posture data | JSON |
+| `/api/history` | GET | Recent access failures via GraphQL (configurable time range) | JSON |
+| `/api/networkinfo` | GET | Network and browser information | JSON |
+| `/api/env` | GET | Environment variables and theme configuration | JSON |
+| `/api/idpdetails` | GET | Identity provider details from Cloudflare API | JSON |
+| `/api/js` | GET | Dynamic JavaScript for backwards compatibility | JavaScript |
 
-## 🧩 Application Structure
-
-### Single Worker Architecture
-
-```
-src/
-└── main.js                 # Complete Cloudflare Worker
-    ├── Event Listeners     # Route handling
-    ├── CORS Management     # Dynamic origin handling
-    ├── API Endpoints       # User data, history, env
-    ├── Inline HTML         # Complete page with embedded CSS/JS
-    └── JavaScript API      # Dynamic UI components
-```
-
-### Key Functions
-
-- **`serveInlineHTML()`** - Serves complete page with embedded assets
-- **`handleJavaScript()`** - Dynamic JavaScript with S-Tier design components
-- **`handleUserDetails()`** - Aggregates identity, device, and posture data
-- **`handleHistoryRequest()`** - GraphQL-powered access failure history
-- **`getCorsHeaders()`** - Dynamic CORS for subdomain support
-
-## 🔧 Development
-
-### Local Development
-```bash
-# Install dependencies
-npm install
-
-# Start development server
-wrangler dev
-```
-
-### Production Deployment
-```bash
-# Deploy to Cloudflare
-wrangler deploy
-```
-
-### Theme Customization
-
-1. Set `DEBUG = "true"` in wrangler.jsonc
-2. Deploy the Worker
-3. Visit `https://denied.yourdomain.com/debug`
-4. Upload logo and configure colors
-5. Set `DEBUG = "false"` and redeploy
 
 
 
@@ -277,16 +323,18 @@ wrangler deploy
 
 1. Fork the repository
 2. Create feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit changes (`git commit -m 'Add AmazingFeature'`)
-4. Push branch (`git push origin feature/AmazingFeature`)
-5. Open Pull Request
+3. Follow TypeScript and ESLint standards (`npm run lint`)
+4. Commit changes (`git commit -m 'Add AmazingFeature'`)
+5. Push branch (`git push origin feature/AmazingFeature`)
+6. Open Pull Request
 
 ### Development Guidelines
-- Follow S-Tier design principles
-- Maintain security best practices
+- Maintain TypeScript type safety
+- Follow ESLint rules with `npm run lint:fix`
 - Add comprehensive error handling
-- Test CORS functionality thoroughly
-- Validate API token permissions
+- Test all API integrations
+- Validate UI/UX enhancements
+- Ensure security best practices
 
 ## 🙏 Acknowledgments
 
@@ -296,15 +344,23 @@ This project is based on and extends the original [cf-identity-dynamic](https://
 - [Cloudflare Workers](https://workers.cloudflare.com/) - Serverless compute platform
 - [Cloudflare Access](https://www.cloudflare.com/zero-trust/products/access/) - Zero Trust access control
 - [Cloudflare GraphQL API](https://developers.cloudflare.com/analytics/graphql-api/) - Analytics and audit logs
+- [TypeScript](https://www.typescriptlang.org/) - Type-safe JavaScript development
+- [ESLint](https://eslint.org/) - Code quality and consistency
 
 ## 📝 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the GNU General Public License v3.0 - see the [LICENSE](LICENSE) file for details.
+
+### License Summary
+
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
 ---
 
 <div align="center">
   <p><strong>Built with ❤️ for Cloudflare Zero Trust</strong></p>
-  <p>🚀 <em>Enterprise-grade • Security-first • Performance-optimized</em></p>
+  <p>🚀 <em>Enterprise-grade • Security-first • TypeScript-powered</em></p>
   <p><a href="#-cloudflare-access-denied-information-page">⬆️ Back to top</a></p>
 </div>

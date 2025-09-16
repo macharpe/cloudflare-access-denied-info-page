@@ -4,6 +4,9 @@ node_modules
 # Wrangler
 /.wrangler
 
+# TypeScript build output
+dist/
+
 # System files
 .DS_Store
 

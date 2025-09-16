@@ -3,8 +3,12 @@
   "version": "1.0.0",
   "private": true,
   "description": "Cloudflare Access Denied Information Page - Enterprise-grade access denied page with inline HTML/CSS/JS solution",
-  "main": "src/main.js",
+  "main": "src/main.ts",
   "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint . --ext .ts,.js && tsc --noEmit",
+    "lint:fix": "eslint . --ext .ts,.js --fix",
     "deploy": "wrangler deploy",
     "dev": "wrangler dev"
   },
@@ -17,8 +21,13 @@
     "identity"
   ],
   "author": "Your Organization",
-  "license": "MIT",
+  "license": "GPL-3.0",
   "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250913.0",
+    "@typescript-eslint/eslint-plugin": "^8.44.0",
+    "@typescript-eslint/parser": "^8.44.0",
+    "eslint": "^9.35.0",
+    "typescript": "^5.9.2",
     "wrangler": "^4.36.0"
   },
   "engines": {
