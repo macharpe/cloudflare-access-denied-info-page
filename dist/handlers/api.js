@@ -53,7 +53,7 @@ export async function handleUserDetails(request, env) {
             device_id = identityData.device_id;
         }
         // Step 3: Enrich with device details and posture information
-        let enrichedData = {
+        const enrichedData = {
             identity: identityData
         };
         if (device_id && env.ACCOUNT_ID) {
@@ -151,21 +151,21 @@ export async function handleHistoryRequest(request, env) {
         }
       }`;
         // Send request to Cloudflare's GraphQL API
-        const response = await fetch("https://api.cloudflare.com/client/v4/graphql", {
-            method: "POST",
+        const response = await fetch('https://api.cloudflare.com/client/v4/graphql', {
+            method: 'POST',
             headers: {
                 Authorization: `Bearer ${env.BEARER_TOKEN}`,
-                "Content-Type": "application/json",
+                'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ query }),
+            body: JSON.stringify({ query })
         });
         if (!response.ok) {
             const errorText = await response.text();
-            return new Response(JSON.stringify({ error: "Failed to fetch history data", details: errorText, status: response.status }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+            return new Response(JSON.stringify({ error: 'Failed to fetch history data', details: errorText, status: response.status }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
         }
         const data = await response.json();
         if (data.errors && data.errors.length > 0) {
-            return new Response(JSON.stringify({ error: "GraphQL errors", details: data.errors }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+            return new Response(JSON.stringify({ error: 'GraphQL errors', details: data.errors }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
         }
         const loginEvents = data?.data?.viewer?.accounts[0]?.accessLoginRequestsAdaptiveGroups || [];
         // Fetch app names for each event
@@ -175,11 +175,11 @@ export async function handleHistoryRequest(request, env) {
                 const appUrl = `https://api.cloudflare.com/client/v4/accounts/${env.ACCOUNT_ID}/access/apps/${appId}`;
                 try {
                     const appResponse = await fetch(appUrl, {
-                        method: "GET",
+                        method: 'GET',
                         headers: {
                             Authorization: `Bearer ${env.BEARER_TOKEN}`,
-                            "Content-Type": "application/json",
-                        },
+                            'Content-Type': 'application/json'
+                        }
                     });
                     if (appResponse.ok) {
                         const appData = await appResponse.json();
@@ -189,16 +189,16 @@ export async function handleHistoryRequest(request, env) {
                         return `Unknown App (${appResponse.status})`;
                     }
                 }
-                catch (error) {
-                    return "Unknown App";
+                catch (_error) {
+                    return 'Unknown App';
                 }
             }
-            return "No AppId";
+            return 'No AppId';
         }));
         // Enhance login events with app names
         const enhancedLoginEvents = loginEvents.map((event, index) => ({
             ...event,
-            applicationName: appNames[index],
+            applicationName: appNames[index]
         }));
         return new Response(JSON.stringify({ loginHistory: enhancedLoginEvents }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -218,7 +218,7 @@ export async function handleHistoryRequest(request, env) {
 // Network information endpoint - uses Cloudflare's CF-Connecting-IP and CF-IPCountry headers
 export async function handleNetworkInfo(request, env) {
     const corsHeaders = getCorsHeaders(request, env);
-    if (request.method === "OPTIONS") {
+    if (request.method === 'OPTIONS') {
         return new Response(null, { headers: corsHeaders });
     }
     try {
@@ -307,36 +307,36 @@ export async function handleNetworkInfo(request, env) {
             }
         }
         const networkInfo = {
-            ip: ip,
-            country: country,
-            city: city,
-            region: region,
+            ip,
+            country,
+            city,
+            region,
             isp: asOrganization,
-            connectionType: connectionType,
-            browser: browser,
-            edgeLocation: edgeLocation,
+            connectionType,
+            browser,
+            edgeLocation,
             timestamp: new Date().toISOString()
         };
         return new Response(JSON.stringify(networkInfo), {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
     }
-    catch (error) {
-        return new Response(JSON.stringify({ error: "Failed to fetch network information" }), {
+    catch (_error) {
+        return new Response(JSON.stringify({ error: 'Failed to fetch network information' }), {
             status: 500,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
     }
 }
 // Helper function to extract device ID from JWT token
-function getDeviceIdFromToken(jwt) {
-    const [header, payload, signature] = jwt.split('.');
+function _getDeviceIdFromToken(jwt) {
+    const [_header, payload, _signature] = jwt.split('.');
     if (payload) {
         try {
             const decoded = JSON.parse(atob(payload.replace(/_/g, '/').replace(/-/g, '+')));
             return decoded.device_id || null;
         }
-        catch (error) {
+        catch (_error) {
             return null;
         }
     }
@@ -437,7 +437,7 @@ async function fetchIdpDetails(accountId, idpId, env) {
             }
         }
     }
-    catch (error) {
+    catch (_error) {
         // Error occurred during IDP details fetch
     }
     return null;
@@ -468,7 +468,7 @@ export async function handleIdpDetailsRequest(request, env) {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
     }
-    catch (error) {
+    catch (_error) {
         return new Response(JSON.stringify({ error: 'Failed to fetch IDP details' }), {
             status: 500,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }

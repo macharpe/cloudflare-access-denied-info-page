@@ -4,7 +4,7 @@
 import { handleUserDetails, handleHistoryRequest, handleNetworkInfo, handleEnvRequest, handleIdpDetailsRequest } from './api.js';
 import { generateAccessDeniedHTML } from '../templates/access-denied.js';
 import { getCorsHeaders } from '../utils/cors.js';
-export async function handleRequest(eventOrRequest, env, context) {
+export async function handleRequest(eventOrRequest, env, _context) {
     // Handle both calling patterns: event listener and export default fetch
     let request, environment;
     if (eventOrRequest.request) {
