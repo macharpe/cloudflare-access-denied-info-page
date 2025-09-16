@@ -14,14 +14,6 @@ npm-debug.log*
 CLAUDE.md
 .claude
 
-# Development files
-debug-site.js
-current-layout.png
-
-# Archive
-README.md.bak
-src/main.js.backup
-
 # Playwright MCP
 .playwright-mcp
 
