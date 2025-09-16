@@ -3,7 +3,7 @@
   "account_id": "6b3bd3e4a3c3f11b51c67f98641a8688",
   "workers_dev": false,
   "compatibility_date": "2024-11-25",
-  "main": "src/main.js",
+  "main": "src/main.ts",
   "routes": [
     {
       "pattern": "denied.macharpe.com",
@@ -12,14 +12,13 @@
   ],
   "vars": {
     // BEARER_TOKEN (Defined with wrangler secret put)
-    "CORS_ORIGIN": "https://denied.macharpe.com", // Allow CORS from the main domain
+    "CORS_ORIGIN": "https://denied.macharpe.com", // Primary CORS origin for the access denied page
     "ACCOUNT_ID": "6b3bd3e4a3c3f11b51c67f98641a8688",
-    "ORGANIZATION_NAME": "macharpe",
-    "DEBUG": "false",
+    "ORGANIZATION_NAME": "macharpe", // Used to build dynamic domains (e.g., macharpe.com, *.macharpe.com)
+    "ORGANIZATION_DOMAIN": "macharpe.com", // Base domain for dynamic CORS configuration
+    "ACCESS_DOMAIN": "denied.macharpe.com", // The specific domain where this worker is deployed
     "TARGET_GROUP": "ZeroTrust", // Define the "special group" that you want to use for notification
-    "SUPPORT_EMAIL": "support@macharpe.com", // Contact support email address
-    "PRIMARY_COLOR": "#3498db", // Primary theme color
-    "SECONDARY_COLOR": "#2ecc71" // Secondary theme color
+    "HISTORY_HOURS_BACK": "2" // Number of hours to look back for Recent Access Login Failures (default: 2)
   },
   // Observability - provides Worker analytics and logs
   "observability": {

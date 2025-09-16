@@ -1,13 +1,13 @@
 # 🛡️ Cloudflare Access Denied Information Page
 
 [![Cloudflare Workers](https://img.shields.io/badge/Cloudflare-Workers-orange?style=for-the-badge&logo=cloudflare)](https://workers.cloudflare.com/)
-[![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)](https://javascript.info/)
+[![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
 [![Security](https://img.shields.io/badge/Security-First-green?style=for-the-badge&logo=shield)](https://workers.cloudflare.com/)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg?style=for-the-badge)](https://www.gnu.org/licenses/gpl-3.0)
 
 > **Note**: This project is based on and extends the original [cf-identity-dynamic](https://github.com/cloudflare/cf-identity-dynamic) repository by Cloudflare.
 
-A professional, enterprise-grade access denied page built entirely with **Cloudflare Workers** that provides enriched user feedback and comprehensive device posture information. This solution dynamically fetches user identity data and presents it in a modern, S-Tier design system compliant interface.
+A professional, enterprise-grade access denied page built with **Cloudflare Workers** that provides enriched user feedback and comprehensive device posture information. This solution features a **S-Tier design system** with semantic components, design tokens, and WCAG AA accessibility compliance, dynamically fetching user identity data to present it in a modern, professional interface.
 
 ## ⚠️ Important Notice
 
@@ -32,24 +32,27 @@ Other operating systems and identity providers may have limited functionality or
 - 👥 **Group Management** - Identity provider group information and special group notifications
 - 📱 **Comprehensive Device Info** - Detailed device model, OS version, and browser details
 - 📊 **Access History** - Recent login attempts and failure analysis via GraphQL
-- 🎨 **Professional Design System** - S-Tier UI with semantic colors, consistent typography, and accessibility
-- ⚡ **Lightning Fast** - Single Worker deployment with 3ms startup time
-- 🔒 **Security Hardened** - Comprehensive security headers and CORS protection
-- 🚀 **Zero Build Dependencies** - Inline HTML/CSS/JS solution bypassing static asset issues
+- 🎨 **S-Tier Design System** - Enterprise-grade UI with design tokens, semantic badge components, and WCAG AA accessibility
+- ⚡ **Lightning Fast** - Modular Worker deployment with 3ms startup time
+- 🔒 **Security Hardened** - Comprehensive security headers and dynamic CORS protection
+- 🏗️ **Modern Architecture** - Modular ES6+ design with separation of concerns
+- 🎯 **Design System** - Professional component-based UI with design tokens
 
 ## 🏗️ Architecture
+
+### System Overview
 
 ```mermaid
 graph TB
     subgraph "User Browser"
         A[User Access Attempt]
         B[Access Denied Page]
-        C[Inline HTML/CSS/JS]
+        C[Template-based HTML/CSS/JS]
     end
 
     subgraph "Cloudflare Edge"
         D[Cloudflare Access]
-        E[Workers Runtime]
+        E[TypeScript Workers Runtime]
     end
 
     subgraph "Cloudflare APIs"
@@ -63,7 +66,7 @@ graph TB
         K["API: User Details"]
         L["API: History"]
         M["API: Environment"]
-        N["API: JavaScript"]
+        N["API: Network"]
     end
 
     A --> D
@@ -81,6 +84,7 @@ graph TB
     K --> J
     L --> I
 ```
+
 
 ## 🚀 Quick Start
 
@@ -125,6 +129,7 @@ Create a **Custom Token** in your Cloudflare dashboard with these **exact permis
 
 | **Resource Type** | **Permission** | **Purpose** |
 |---|---|---|
+| **Access: Organizations, Identity Providers, and Groups** | Read | **CRITICAL** - Identity provider details and group information |
 | **Access: Device Posture** | Read | Device compliance and posture information |
 | **Access: Audit Logs** | Read | **CRITICAL** - Powers login history via GraphQL queries |
 | **Zero Trust** | Read | WARP device details and connection status |
@@ -136,6 +141,7 @@ Create a **Custom Token** in your Cloudflare dashboard with these **exact permis
 2. **Create Token** → **Custom token**
 3. **Add Permissions**:
    ```
+   Account → Access: Organizations, Identity Providers, and Groups → Read
    Account → Access: Device Posture → Read
    Account → Access: Audit Logs → Read
    Account → Zero Trust → Read
@@ -153,6 +159,7 @@ Create a **Custom Token** in your Cloudflare dashboard with these **exact permis
 | Issue | Missing Permission |
 |-------|-------------------|
 | "Unknown App" in history | `Access: Apps and Policies` read |
+| IDP shows generic "SAML" instead of provider name | `Access: Organizations, Identity Providers, and Groups` read |
 | No device information | `Access: Device Posture` or `Zero Trust` read |
 | No login history / 500 errors | `Access: Audit Logs` read |
 | General 500 errors | Token expired or insufficient permissions |
@@ -166,7 +173,7 @@ Create a **Custom Token** in your Cloudflare dashboard with these **exact permis
   "name": "access-denied-info-page",
   "account_id": "your-account-id",
   "workers_dev": false,
-  "main": "src/main.js",
+  "main": "src/main.ts",
   "routes": [
     {
       "pattern": "denied.yourdomain.com",
@@ -177,11 +184,10 @@ Create a **Custom Token** in your Cloudflare dashboard with these **exact permis
     "CORS_ORIGIN": "https://denied.yourdomain.com",
     "ACCOUNT_ID": "your-account-id",
     "ORGANIZATION_NAME": "YourOrg",
+    "ORGANIZATION_DOMAIN": "yourdomain.com",
+    "ACCESS_DOMAIN": "denied.yourdomain.com",
     "TARGET_GROUP": "SpecialGroup",
-    "DEBUG": "false",
-    "SUPPORT_EMAIL": "support@yourdomain.com",
-    "PRIMARY_COLOR": "#3498db",
-    "SECONDARY_COLOR": "#2ecc71"
+    "HISTORY_HOURS_BACK": "2"
   },
   "observability": {
     "enabled": true
@@ -195,12 +201,12 @@ Create a **Custom Token** in your Cloudflare dashboard with these **exact permis
 |----------|---------|---------|
 | `ACCOUNT_ID` | API requests and org verification | `6b3bd3e4a3c3f11b51c67f98641a8688` |
 | `ORGANIZATION_NAME` | Display name in UI | `YourCompany` |
-| `CORS_ORIGIN` | CORS allowed origin | `https://denied.yourdomain.com` |
+| `ORGANIZATION_DOMAIN` | Base domain for dynamic CORS | `yourdomain.com` |
+| `ACCESS_DOMAIN` | Access denied page domain | `denied.yourdomain.com` |
+| `CORS_ORIGIN` | Primary CORS origin | `https://denied.yourdomain.com` |
 | `TARGET_GROUP` | Special group to highlight | `Administrators` |
-| `DEBUG` | Enable debug mode | `false` (production) |
-| `SUPPORT_EMAIL` | Support contact | `support@yourdomain.com` |
-| `PRIMARY_COLOR` | Primary theme color | `#3498db` |
-| `SECONDARY_COLOR` | Secondary theme color | `#2ecc71` |
+| `HISTORY_HOURS_BACK` | Hours to look back for Recent Access Login Failures | `2` (2 hours) |
+
 
 ## 📚 API Endpoints
 
@@ -209,32 +215,39 @@ The Worker exposes these internal endpoints:
 | Endpoint | Method | Description | Response |
 |----------|--------|-------------|----------|
 | `/` | GET | Main page with inline HTML/CSS/JS | HTML |
-| `/api/js` | GET | Dynamic JavaScript application code | JavaScript |
+| `/api/network` | GET | Network and browser information | JSON |
 | `/api/userdetails` | GET | Combined identity, device, and posture data | JSON |
 | `/api/history` | GET | Recent access failures via GraphQL | JSON |
 | `/api/env` | GET | Environment vars and theme configuration | JSON |
 
 ## 🧩 Application Structure
 
-### Single Worker Architecture
+### Modular TypeScript Architecture
 
 ```
 src/
-└── main.js                 # Complete Cloudflare Worker
-    ├── Event Listeners     # Route handling
-    ├── CORS Management     # Dynamic origin handling
-    ├── API Endpoints       # User data, history, env
-    ├── Inline HTML         # Complete page with embedded CSS/JS
-    └── JavaScript API      # Dynamic UI components
+├── main.ts                    # TypeScript entry point
+├── types/
+│   └── index.ts              # Comprehensive type definitions
+├── handlers/
+│   ├── router.ts             # Request routing logic
+│   └── api.ts                # API endpoint handlers
+├── templates/
+│   └── access-denied.ts      # Professional HTML template system
+└── utils/
+    ├── cors.ts               # Dynamic CORS configuration
+    └── auth.ts               # JWT parsing and identity fetching
 ```
 
-### Key Functions
+### Key Components
 
-- **`serveInlineHTML()`** - Serves complete page with embedded assets
-- **`handleJavaScript()`** - Dynamic JavaScript with S-Tier design components
-- **`handleUserDetails()`** - Aggregates identity, device, and posture data
-- **`handleHistoryRequest()`** - GraphQL-powered access failure history
-- **`getCorsHeaders()`** - Dynamic CORS for subdomain support
+- **`main.ts`** - Clean TypeScript entry point with event handlers
+- **`router.ts`** - Centralized routing with type-safe request handling
+- **`api.ts`** - Modular API endpoints with comprehensive error handling
+- **`access-denied.ts`** - Professional template system replacing string concatenation
+- **`cors.ts`** - Dynamic CORS based on configurable domain variables
+- **`auth.ts`** - Type-safe JWT parsing and identity validation
+- **`types/index.ts`** - Complete type definitions for all data structures
 
 ## 🔧 Development
 
@@ -243,15 +256,26 @@ src/
 # Install dependencies
 npm install
 
+# TypeScript compilation
+npm run build
+
 # Start development server
 wrangler dev
+
+# Type checking
+npm run typecheck
+
+# Code linting
+npm run lint
 ```
 
 ### Production Deployment
 ```bash
-# Deploy to Cloudflare
+# Build and deploy
+npm run build
 wrangler deploy
 ```
+
 
 ## 🤝 Contributing
 
