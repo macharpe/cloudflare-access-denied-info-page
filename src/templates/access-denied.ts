@@ -7,6 +7,9 @@ export async function generateAccessDeniedPage(_request: Request, _env: Cloudfla
   /* Design Tokens - Colors */
   --color-primary: #3b82f6;
   --color-primary-rgb: 59, 130, 246;
+  --color-primary-hover: #2563eb;
+  --color-primary-active: #1d4ed8;
+  --color-primary-focus: #3b82f6;
 
   /* Neutral Colors */
   --color-neutral-50: #f8fafc;
@@ -20,15 +23,33 @@ export async function generateAccessDeniedPage(_request: Request, _env: Cloudfla
   --color-neutral-800: #1e293b;
   --color-neutral-900: #0f172a;
 
+  /* Dark Mode Colors */
+  --color-dark-bg: #0f172a;
+  --color-dark-surface: #1e293b;
+  --color-dark-border: #334155;
+  --color-dark-text: #f1f5f9;
+  --color-dark-text-muted: #94a3b8;
+
   /* Semantic Colors */
   --color-success: #059669;
   --color-success-bg: #d1fae5;
+  --color-success-hover: #047857;
   --color-error: #dc2626;
   --color-error-bg: #fee2e2;
+  --color-error-hover: #b91c1c;
   --color-warning: #d97706;
   --color-warning-bg: #fef3c7;
+  --color-warning-hover: #b45309;
   --color-info: #0284c7;
   --color-info-bg: #dbeafe;
+  --color-info-hover: #0369a1;
+
+  /* Component State Colors */
+  --color-interactive-default: var(--color-neutral-100);
+  --color-interactive-hover: var(--color-neutral-200);
+  --color-interactive-active: var(--color-neutral-300);
+  --color-interactive-disabled: var(--color-neutral-50);
+  --color-focus-ring: rgba(59, 130, 246, 0.3);
 
   /* Typography Scale */
   --font-size-xs: 12px;
@@ -79,6 +100,179 @@ export async function generateAccessDeniedPage(_request: Request, _env: Cloudfla
   --transition-fast: 150ms ease;
   --transition-normal: 200ms ease;
   --transition-slow: 300ms ease;
+
+  /* Focus States */
+  --focus-ring-width: 2px;
+  --focus-ring-offset: 2px;
+}
+
+/* Dark Mode Support */
+[data-theme="dark"] {
+  --color-neutral-50: #1e293b;
+  --color-neutral-100: #334155;
+  --color-neutral-200: #475569;
+  --color-neutral-300: #64748b;
+  --color-neutral-400: #94a3b8;
+  --color-neutral-500: #cbd5e1;
+  --color-neutral-600: #e2e8f0;
+  --color-neutral-700: #f1f5f9;
+  --color-neutral-800: #f8fafc;
+  --color-neutral-900: #ffffff;
+
+  --color-interactive-default: var(--color-dark-surface);
+  --color-interactive-hover: var(--color-dark-border);
+  --color-interactive-active: var(--color-neutral-600);
+  --color-interactive-disabled: var(--color-neutral-800);
+}
+
+/* Dark Mode Card Overrides */
+[data-theme="dark"] .card {
+  background: var(--color-neutral-50);
+  border-color: var(--color-neutral-200);
+}
+
+[data-theme="dark"] .card h3 {
+  color: var(--color-neutral-900);
+}
+
+[data-theme="dark"] .card .field span.label {
+  color: var(--color-neutral-400);
+}
+
+[data-theme="dark"] .card .field span.value {
+  color: var(--color-neutral-300);
+}
+
+[data-theme="dark"] .card .field > div {
+  border-bottom-color: var(--color-neutral-200);
+}
+
+[data-theme="dark"] .card:hover {
+  border-color: var(--color-neutral-300);
+}
+
+/* Dark Mode Body and Global Overrides */
+[data-theme="dark"] body {
+  background: linear-gradient(135deg, var(--color-neutral-50) 0%, var(--color-neutral-100) 100%);
+}
+
+[data-theme="dark"] .header h1 {
+  color: var(--color-neutral-900);
+}
+
+[data-theme="dark"] .header p {
+  color: var(--color-neutral-400);
+}
+
+[data-theme="dark"] .loading p {
+  color: var(--color-neutral-400);
+}
+
+/* Dark Mode Modal Overrides */
+[data-theme="dark"] .modal-content {
+  background: var(--color-neutral-50);
+  border-color: var(--color-neutral-200);
+}
+
+[data-theme="dark"] .modal h3 {
+  color: var(--color-neutral-900);
+}
+
+[data-theme="dark"] .modal .field span.label {
+  color: var(--color-neutral-400);
+}
+
+[data-theme="dark"] .modal .field span.value {
+  color: var(--color-neutral-300);
+}
+
+[data-theme="dark"] .modal .field > div {
+  border-bottom-color: var(--color-neutral-200);
+}
+
+[data-theme="dark"] .modal .close-btn {
+  color: var(--color-neutral-400);
+}
+
+[data-theme="dark"] .modal .close-btn:hover {
+  color: var(--color-neutral-900);
+  background: var(--color-neutral-200);
+}
+
+/* Dark Mode Status and Button Overrides */
+[data-theme="dark"] .card .expand-btn {
+  background: var(--color-neutral-100);
+  color: var(--color-neutral-400);
+  border-color: var(--color-neutral-200);
+}
+
+[data-theme="dark"] .card .expand-btn:hover {
+  background: var(--color-neutral-200);
+  color: var(--color-neutral-300);
+  border-color: var(--color-neutral-300);
+}
+
+[data-theme="dark"] .card .status {
+  background: var(--color-success-bg);
+  color: var(--color-success);
+}
+
+[data-theme="dark"] .card .status.disconnected {
+  background: var(--color-neutral-200);
+  color: var(--color-neutral-400);
+}
+
+[data-theme="dark"] .card .status.non-compliant {
+  background: var(--color-error-bg);
+  color: var(--color-error);
+}
+
+[data-theme="dark"] .card .status.failed {
+  background: var(--color-error-bg);
+  color: var(--color-error);
+}
+
+[data-theme="dark"] .modal .status {
+  background: var(--color-success-bg);
+  color: var(--color-success);
+}
+
+[data-theme="dark"] .modal .status.disconnected {
+  background: var(--color-neutral-200);
+  color: var(--color-neutral-400);
+}
+
+[data-theme="dark"] .modal .status.non-compliant {
+  background: var(--color-error-bg);
+  color: var(--color-error);
+}
+
+/* Dark Mode History Section Overrides */
+[data-theme="dark"] .history-card {
+  background: var(--color-neutral-50);
+  border-color: var(--color-neutral-200);
+}
+
+[data-theme="dark"] .history-card h3 {
+  color: var(--color-neutral-900);
+}
+
+[data-theme="dark"] .history-item {
+  border-bottom-color: var(--color-neutral-200);
+}
+
+[data-theme="dark"] .history-item .title {
+  color: var(--color-neutral-900);
+}
+
+[data-theme="dark"] .history-item .details {
+  color: var(--color-neutral-500);
+}
+
+/* Component State Mixins */
+.focus-visible:focus-visible {
+  outline: var(--focus-ring-width) solid var(--color-focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }
 
 *,:after,:before{box-sizing:border-box}
@@ -166,11 +360,25 @@ body{
   border:1px solid var(--color-neutral-200);
   cursor:pointer;
   transition:all var(--transition-normal),border var(--transition-slow),box-shadow var(--transition-slow);
+  outline:none;
+  position:relative;
 }
 
 .card:hover{
   box-shadow:var(--shadow-lg);
   transform:translateY(-1px);
+  border-color:var(--color-neutral-300);
+}
+
+.card:active{
+  transform:translateY(0);
+  box-shadow:var(--shadow-md);
+}
+
+.card:focus-visible{
+  outline:var(--focus-ring-width) solid var(--color-focus-ring);
+  outline-offset:var(--focus-ring-offset);
+  border-color:var(--color-primary);
 }
 
 .card h3{
@@ -231,7 +439,7 @@ body{
 }
 
 .card .expand-btn{
-  background:var(--color-neutral-100);
+  background:var(--color-interactive-default);
   color:var(--color-neutral-600);
   padding:var(--space-1) var(--space-2);
   border-radius:var(--radius-sm);
@@ -240,11 +448,30 @@ body{
   cursor:pointer;
   border:none;
   outline:none;
-  transition:background-color var(--transition-fast);
+  transition:all var(--transition-fast);
+  position:relative;
 }
 
 .card .expand-btn:hover{
-  background:var(--color-neutral-200);
+  background:var(--color-interactive-hover);
+  transform:scale(1.05);
+}
+
+.card .expand-btn:active{
+  background:var(--color-interactive-active);
+  transform:scale(0.95);
+}
+
+.card .expand-btn:focus-visible{
+  outline:var(--focus-ring-width) solid var(--color-focus-ring);
+  outline-offset:var(--focus-ring-offset);
+}
+
+.card .expand-btn:disabled{
+  background:var(--color-interactive-disabled);
+  color:var(--color-neutral-400);
+  cursor:not-allowed;
+  opacity:0.6;
 }
 
 .history-card{
@@ -319,13 +546,30 @@ body{
   font-size:var(--font-size-2xl);
   color:var(--color-neutral-600);
   cursor:pointer;
-  padding:0;
+  padding:var(--space-1);
   margin:0;
   line-height:1;
-  transition:color var(--transition-fast);
+  border-radius:var(--radius-sm);
+  transition:all var(--transition-fast);
+  outline:none;
 }
 
-.modal .close-btn:hover{color:var(--color-neutral-700)}
+.modal .close-btn:hover{
+  color:var(--color-neutral-700);
+  background:var(--color-interactive-default);
+  transform:scale(1.1);
+}
+
+.modal .close-btn:active{
+  color:var(--color-neutral-800);
+  background:var(--color-interactive-active);
+  transform:scale(0.95);
+}
+
+.modal .close-btn:focus-visible{
+  outline:var(--focus-ring-width) solid var(--color-focus-ring);
+  outline-offset:var(--focus-ring-offset);
+}
 
 .modal .field{
   display:flex;
@@ -380,11 +624,37 @@ body{
       "window.targetGroup = null;",
       "window.idpDetails = {};",
       "",
+      "// Dark mode functionality",
+      "function initializeTheme() {",
+      "  const savedTheme = localStorage.getItem('theme') || 'light';",
+      "  document.documentElement.setAttribute('data-theme', savedTheme);",
+      "}",
+      "",
+      "function toggleTheme() {",
+      "  const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';",
+      "  const newTheme = currentTheme === 'light' ? 'dark' : 'light';",
+      "  document.documentElement.setAttribute('data-theme', newTheme);",
+      "  localStorage.setItem('theme', newTheme);",
+      "  updateThemeButton();",
+      "}",
+      "",
+      "function updateThemeButton() {",
+      "  const themeButton = document.getElementById('theme-toggle');",
+      "  const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';",
+      "  if (themeButton) {",
+      "    themeButton.textContent = currentTheme === 'light' ? '🌙 Dark Mode' : '☀️ Light Mode';",
+      "  }",
+      "}",
+      "",
       "function createAccessDeniedPage() {",
       "  const body = document.body;",
       "  const htmlContent = [",
       "    '<div class=\"container\">',",
       "    '<div class=\"header\">',",
+      "    '<div style=\"display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: var(--space-4);\">',",
+      "      '<div></div>',",
+      "      '<button id=\"theme-toggle\" onclick=\"toggleTheme()\" style=\"background: var(--color-interactive-default); border: 1px solid var(--color-neutral-200); border-radius: var(--radius-md); padding: var(--space-2) var(--space-3); cursor: pointer; font-size: var(--font-size-sm); transition: all var(--transition-fast); outline: none;\" onmouseover=\"this.style.background=\\\"var(--color-interactive-hover)\\\"; this.style.transform=\\\"scale(1.05)\\\"\" onmouseout=\"this.style.background=\\\"var(--color-interactive-default)\\\"; this.style.transform=\\\"scale(1)\\\"\" onfocus=\"this.style.outline=\\\"var(--focus-ring-width) solid var(--color-focus-ring)\\\"; this.style.outlineOffset=\\\"var(--focus-ring-offset)\\\"\">🌙 Dark Mode</button>',",
+      "    '</div>',",
       "    '<h1>Access Denied</h1>',",
       "    '<p>You do not have permission to access this resource. Here is information about your current session and device status.</p>',",
       "    '</div>',",
@@ -649,9 +919,9 @@ body{
       "    historyHtml += '<div class=\"history-item\">';",
       "    historyHtml += '<div style=\"display: flex; justify-content: space-between; align-items: flex-start; gap: 16px;\">';",
       "    historyHtml += '<div style=\"flex: 1;\">';",
-      "    historyHtml += `<div style=\"font-weight: 600; color: #0f172a; margin-bottom: 8px;\">${event.applicationName || 'Unknown Application'}</div>`;",
-      "    historyHtml += `<div style=\"color: #6b7280; font-size: 14px; line-height: 1.4;\">${timestamp}</div>`;",
-      "    historyHtml += `<div style=\"color: #6b7280; font-size: 14px; margin-top: 4px;\">IP: ${event.dimensions.ipAddress || 'Unknown'} • ${event.dimensions.country || 'Unknown'}</div>`;",
+      "    historyHtml += `<div class=\"title\">${event.applicationName || 'Unknown Application'}</div>`;",
+      "    historyHtml += `<div class=\"details\">${timestamp}</div>`;",
+      "    historyHtml += `<div class=\"details\" style=\"margin-top: 4px;\">IP: ${event.dimensions.ipAddress || 'Unknown'} • ${event.dimensions.country || 'Unknown'}</div>`;",
       "    historyHtml += '</div>';",
       "    historyHtml += '<span style=\"background: #fee2e2; color: #dc2626; padding: 4px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; flex-shrink: 0;\">FAILED</span>';",
       "    historyHtml += '</div>';",
@@ -909,12 +1179,16 @@ body{
       "",
       "if (document.readyState === 'loading') {",
       "  document.addEventListener('DOMContentLoaded', () => {",
+      "    initializeTheme();",
       "    createAccessDeniedPage();",
       "    loadUserData();",
+      "    setTimeout(updateThemeButton, 100);",
       "  });",
       "} else {",
+      "  initializeTheme();",
       "  createAccessDeniedPage();",
       "  loadUserData();",
+      "  setTimeout(updateThemeButton, 100);",
       "}"
     ].join("\n");
 
