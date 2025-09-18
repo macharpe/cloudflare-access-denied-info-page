@@ -36,6 +36,24 @@ export function getDeviceIdFromToken(jwt: string): string | null {
   return null;
 }
 
+export function getJWTTimingData(jwt: string): { iat?: number; exp?: number } | null {
+  const [, payload] = jwt.split(".");
+  if (payload) {
+    try {
+      const decoded = JSON.parse(
+        atob(payload.replace(/_/g, "/").replace(/-/g, "+"))
+      );
+      return {
+        iat: decoded.iat || undefined,
+        exp: decoded.exp || undefined
+      };
+    } catch (_error) {
+      return null;
+    }
+  }
+  return null;
+}
+
 export async function fetchIdentity(request: Request, env: CloudflareEnv, accessToken?: string): Promise<Response> {
   const token = accessToken || extractAccessToken(request);
 
