@@ -2,6 +2,134 @@ import { CloudflareEnv, UserData, LoginEvent, NetworkInfo, IdpDetails } from "..
 import { getCorsHeaders } from "../utils/cors";
 import { extractAccessToken, getDeviceIdFromToken, fetchIdentity } from "../utils/auth";
 
+function getTimezoneFromLocation(country: string, region: string, city: string): string {
+  // Major timezone mappings based on country/region/city
+  const countryTimezones: { [key: string]: string } = {
+    "US": getUSTimezone(region, city),
+    "CA": getCanadaTimezone(region),
+    "GB": "Europe/London",
+    "FR": "Europe/Paris",
+    "DE": "Europe/Berlin",
+    "IT": "Europe/Rome",
+    "ES": "Europe/Madrid",
+    "NL": "Europe/Amsterdam",
+    "SE": "Europe/Stockholm",
+    "NO": "Europe/Oslo",
+    "DK": "Europe/Copenhagen",
+    "FI": "Europe/Helsinki",
+    "PL": "Europe/Warsaw",
+    "CH": "Europe/Zurich",
+    "AT": "Europe/Vienna",
+    "BE": "Europe/Brussels",
+    "IE": "Europe/Dublin",
+    "PT": "Europe/Lisbon",
+    "RU": "Europe/Moscow",
+    "AU": getAustraliaTimezone(region, city),
+    "JP": "Asia/Tokyo",
+    "KR": "Asia/Seoul",
+    "CN": "Asia/Shanghai",
+    "IN": "Asia/Kolkata",
+    "TH": "Asia/Bangkok",
+    "SG": "Asia/Singapore",
+    "MY": "Asia/Kuala_Lumpur",
+    "PH": "Asia/Manila",
+    "ID": "Asia/Jakarta",
+    "VN": "Asia/Ho_Chi_Minh",
+    "BR": getBrazilTimezone(region),
+    "AR": "America/Argentina/Buenos_Aires",
+    "MX": getMexicoTimezone(region),
+    "CL": "America/Santiago",
+    "CO": "America/Bogota",
+    "PE": "America/Lima",
+    "VE": "America/Caracas",
+    "EG": "Africa/Cairo",
+    "ZA": "Africa/Johannesburg",
+    "NG": "Africa/Lagos",
+    "KE": "Africa/Nairobi",
+    "IL": "Asia/Jerusalem",
+    "TR": "Europe/Istanbul",
+    "SA": "Asia/Riyadh",
+    "AE": "Asia/Dubai",
+    "NZ": "Pacific/Auckland"
+  };
+
+  return countryTimezones[country] || "UTC";
+}
+
+function getUSTimezone(region: string, _city: string): string {
+  const easternStates = ["NY", "FL", "GA", "NC", "SC", "VA", "MD", "DE", "NJ", "CT", "RI", "MA", "VT", "NH", "ME", "PA", "OH", "MI", "IN", "KY", "TN", "WV", "DC"];
+  const centralStates = ["TX", "IL", "WI", "MN", "IA", "MO", "AR", "LA", "MS", "AL", "OK", "KS", "NE", "SD", "ND"];
+  const mountainStates = ["CO", "WY", "UT", "NM", "AZ", "MT", "ID"];
+  const pacificStates = ["CA", "OR", "WA", "NV"];
+  const alaskaStates = ["AK"];
+  const hawaiiStates = ["HI"];
+
+  if (easternStates.includes(region)) return "America/New_York";
+  if (centralStates.includes(region)) return "America/Chicago";
+  if (mountainStates.includes(region)) return "America/Denver";
+  if (pacificStates.includes(region)) return "America/Los_Angeles";
+  if (alaskaStates.includes(region)) return "America/Anchorage";
+  if (hawaiiStates.includes(region)) return "Pacific/Honolulu";
+
+  return "America/New_York"; // Default to Eastern
+}
+
+function getCanadaTimezone(region: string): string {
+  const timezones: { [key: string]: string } = {
+    "BC": "America/Vancouver",
+    "AB": "America/Edmonton",
+    "SK": "America/Regina",
+    "MB": "America/Winnipeg",
+    "ON": "America/Toronto",
+    "QC": "America/Montreal",
+    "NB": "America/Moncton",
+    "NS": "America/Halifax",
+    "PE": "America/Halifax",
+    "NL": "America/St_Johns",
+    "NT": "America/Yellowknife",
+    "NU": "America/Iqaluit",
+    "YT": "America/Whitehorse"
+  };
+
+  return timezones[region] || "America/Toronto";
+}
+
+function getAustraliaTimezone(region: string, _city: string): string {
+  const timezones: { [key: string]: string } = {
+    "NSW": "Australia/Sydney",
+    "VIC": "Australia/Melbourne",
+    "QLD": "Australia/Brisbane",
+    "SA": "Australia/Adelaide",
+    "WA": "Australia/Perth",
+    "TAS": "Australia/Hobart",
+    "NT": "Australia/Darwin",
+    "ACT": "Australia/Sydney"
+  };
+
+  return timezones[region] || "Australia/Sydney";
+}
+
+function getBrazilTimezone(region: string): string {
+  // Most of Brazil uses Brasilia time, with some exceptions
+  const amazonasStates = ["AM", "AC", "RO", "RR"];
+  const fernadoStates = ["FN"]; // Fernando de Noronha
+
+  if (amazonasStates.includes(region)) return "America/Manaus";
+  if (fernadoStates.includes(region)) return "America/Noronha";
+
+  return "America/Sao_Paulo"; // Most common
+}
+
+function getMexicoTimezone(region: string): string {
+  const pacificStates = ["BC", "BCS", "SON", "SIN", "NAY"];
+  const mountainStates = ["CHH", "COA", "NLE", "TAM"];
+
+  if (pacificStates.includes(region)) return "America/Tijuana";
+  if (mountainStates.includes(region)) return "America/Monterrey";
+
+  return "America/Mexico_City"; // Central time, most common
+}
+
 export async function handleUserDetails(request: Request, env: CloudflareEnv): Promise<Response> {
   const corsHeaders = getCorsHeaders(request, env);
 
@@ -43,6 +171,7 @@ export async function handleUserDetails(request: Request, env: CloudflareEnv): P
     }
 
     const identityData: any = await identityResponse.json();
+
 
     const deviceDetailsResponse = await fetchDeviceDetails(
       identityData.gateway_account_id,
@@ -292,11 +421,15 @@ export async function handleNetworkInfo(request: Request, env: CloudflareEnv): P
       }
     }
 
+    // Detect timezone based on country and region
+    const timezone = getTimezoneFromLocation(country, region, city);
+
     const networkInfo: NetworkInfo = {
       ip,
       country,
       city,
       region,
+      timezone,
       isp: asOrganization,
       connectionType,
       browser,

@@ -88,6 +88,7 @@ export interface NetworkInfo {
   country?: string;
   city?: string;
   region?: string;
+  timezone?: string;
   isp?: string;
   connectionType?: string;
   browser?: string;
