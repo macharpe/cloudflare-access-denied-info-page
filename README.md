@@ -263,10 +263,14 @@ src/
 
 - **TypeScript-First**: Full type safety with comprehensive interfaces
 - **Enhanced IDP Integration**: `fetchIdpDetails()` with fallback logic
+- **WARP Mode Detection**: Intelligent inference based on identity flags and device patterns
 - **Professional UI Components**: S-Tier design with hover effects
 - **Expandable Components**: Group Membership and Device Compliance tiles
 - **Copy Functionality**: Complete user information extraction with visual feedback
 - **Modal System**: Dual modal implementation for detailed information display
+- **Smart Browser Detection**: Intelligent browser identification (Brave, Edge, Chrome, Safari, etc.)
+- **Comprehensive Error Handling**: Production-ready null safety and graceful fallbacks
+
 
 ## 🔧 Development
 
