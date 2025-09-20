@@ -147,6 +147,7 @@ export async function handleUserDetails(request: Request, env: CloudflareEnv): P
 
   let deviceId = getDeviceIdFromToken(accessToken);
 
+  // Try to get device ID from identity if not in token
   if (!deviceId) {
     const identityResponse = await fetchIdentity(request, env, accessToken);
     if (!identityResponse.ok) {
@@ -155,13 +156,8 @@ export async function handleUserDetails(request: Request, env: CloudflareEnv): P
 
     const identityData: any = await identityResponse.json();
     deviceId = identityData?.identity?.device_id;
-
-    if (!deviceId) {
-      return new Response(
-        JSON.stringify({ error: "Device ID not found in identity data" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
+    // Note: We don't return an error here if device ID is missing
+    // Some users (like those with DNS-only WARP) may not have a device ID
   }
 
   try {
@@ -172,33 +168,104 @@ export async function handleUserDetails(request: Request, env: CloudflareEnv): P
 
     const identityData: any = await identityResponse.json();
 
-
-    const deviceDetailsResponse = await fetchDeviceDetails(
-      identityData.gateway_account_id,
-      deviceId,
-      env
-    );
-
+    // Only fetch device details if we have a device ID
     let deviceDetailsData: any = {};
-    if (deviceDetailsResponse.ok) {
-      deviceDetailsData = await deviceDetailsResponse.json();
+    let devicePostureData: any = {};
+
+    if (deviceId && identityData.gateway_account_id) {
+      const deviceDetailsResponse = await fetchDeviceDetails(
+        identityData.gateway_account_id,
+        deviceId,
+        env
+      );
+
+      if (deviceDetailsResponse.ok) {
+        deviceDetailsData = await deviceDetailsResponse.json();
+      }
+
+      const devicePostureResponse = await fetchDevicePosture(
+        identityData.gateway_account_id,
+        deviceId,
+        env
+      );
+
+      if (devicePostureResponse.ok) {
+        devicePostureData = await devicePostureResponse.json();
+      }
     }
 
-    const devicePostureResponse = await fetchDevicePosture(
-      identityData.gateway_account_id,
-      deviceId,
-      env
-    );
+    // Extract WARP mode information from device details
+    const warpModeInfo = {
+      mode: "Unknown",
+      profileName: "Default",
+      serviceMode: null as string | null,
+      deviceType: null as string | null,
+      clientVersion: null as string | null,
+    };
 
-    let devicePostureData: any = {};
-    if (devicePostureResponse.ok) {
-      devicePostureData = await devicePostureResponse.json();
+    if (deviceDetailsData?.result) {
+      const device = deviceDetailsData.result;
+
+      // Extract service mode (e.g., "warp", "doh", "proxy")
+      if (device.service_mode_v2?.mode) {
+        warpModeInfo.serviceMode = device.service_mode_v2.mode;
+      }
+
+      // Extract profile name if available
+      if (device.profile_name) {
+        warpModeInfo.profileName = device.profile_name;
+      }
+
+      // Extract device type
+      if (device.device_type) {
+        warpModeInfo.deviceType = device.device_type;
+      }
+
+      // Extract client version
+      if (device.version) {
+        warpModeInfo.clientVersion = device.version;
+      }
+
+      // Determine user-friendly mode description
+      const isWarp = identityData?.is_warp || false;
+      const isGateway = identityData?.is_gateway || false;
+      const serviceModeV2 = device.service_mode_v2?.mode?.toLowerCase();
+
+      if (isGateway && isWarp) {
+        // Full WARP mode with Gateway
+        warpModeInfo.mode = "Gateway with WARP";
+      } else if (isGateway && !isWarp) {
+        // DNS-only mode
+        warpModeInfo.mode = "Gateway with DoH";
+      } else if (!isGateway && isWarp) {
+        // WARP only (consumer mode)
+        warpModeInfo.mode = "WARP (Consumer)";
+      } else if (serviceModeV2 === "proxy") {
+        // Proxy mode
+        warpModeInfo.mode = "Proxy Mode";
+      } else if (serviceModeV2 === "posture_only") {
+        // Device information only mode
+        warpModeInfo.mode = "Device Information Only";
+      } else if (serviceModeV2 === "warp" && !isGateway) {
+        // WARP without Gateway
+        warpModeInfo.mode = "WARP without Gateway";
+      } else if (serviceModeV2 === "doh") {
+        // DoH mode
+        warpModeInfo.mode = "Gateway with DoH";
+      } else if (!isWarp && !isGateway && device.id) {
+        // Device registered but not connected
+        warpModeInfo.mode = "Registered (Not Connected)";
+      } else {
+        // Fallback to basic status
+        warpModeInfo.mode = isWarp ? "WARP Connected" : "Disconnected";
+      }
     }
 
     const combinedData: UserData = {
       identity: identityData,
       device: deviceDetailsData,
       posture: devicePostureData,
+      warpMode: warpModeInfo,
     };
 
     return new Response(JSON.stringify(combinedData), {
@@ -371,17 +438,21 @@ export async function handleNetworkInfo(request: Request, env: CloudflareEnv): P
     let connectionType = "Unknown";
     let browser = "Unknown";
 
-    // Detect browser from User-Agent
-    if (userAgent.includes("Chrome") && !userAgent.includes("Edg")) {
+    // Detect browser from User-Agent (check specific browsers first, then generic ones)
+    if (userAgent.includes("Brave/")) {
+      // Brave browser detection
+      const version = userAgent.match(/Brave\/([0-9.]+)/)?.[1]?.split(".")[0];
+      browser = version ? `Brave ${version}` : "Brave";
+    } else if (userAgent.includes("Edg")) {
+      browser = userAgent.includes("Edg/") ? "Edge " + userAgent.match(/Edg\/([0-9.]+)/)?.[1]?.split(".")[0] : "Edge";
+    } else if (userAgent.includes("Chrome") && !userAgent.includes("Edg")) {
       browser = userAgent.includes("Chrome/") ? "Chrome " + userAgent.match(/Chrome\/([0-9.]+)/)?.[1]?.split(".")[0] : "Chrome";
     } else if (userAgent.includes("Firefox")) {
       browser = userAgent.includes("Firefox/") ? "Firefox " + userAgent.match(/Firefox\/([0-9.]+)/)?.[1]?.split(".")[0] : "Firefox";
-    } else if (userAgent.includes("Safari") && !userAgent.includes("Chrome")) {
-      browser = userAgent.includes("Version/") ? "Safari " + userAgent.match(/Version\/([0-9.]+)/)?.[1]?.split(".")[0] : "Safari";
-    } else if (userAgent.includes("Edg")) {
-      browser = userAgent.includes("Edg/") ? "Edge " + userAgent.match(/Edg\/([0-9.]+)/)?.[1]?.split(".")[0] : "Edge";
     } else if (userAgent.includes("Opera") || userAgent.includes("OPR")) {
       browser = "Opera";
+    } else if (userAgent.includes("Safari") && !userAgent.includes("Chrome")) {
+      browser = userAgent.includes("Version/") ? "Safari " + userAgent.match(/Version\/([0-9.]+)/)?.[1]?.split(".")[0] : "Safari";
     }
 
     if (userAgent.includes("Mobile")) {
@@ -402,14 +473,19 @@ export async function handleNetworkInfo(request: Request, env: CloudflareEnv): P
     const cfRayHeader = request.headers.get("CF-Ray");
     let edgeLocation = "Unknown";
 
-    if (cfRayHeader && cfRayHeader.includes("-")) {
+    // First try to get colo from request.cf (most accurate)
+    if (request.cf?.colo && typeof request.cf.colo === "string") {
+      edgeLocation = request.cf.colo;
+    } else if (cfRayHeader && cfRayHeader.includes("-")) {
+      // Fallback to CF-Ray header
       const rayParts = cfRayHeader.split("-");
       if (rayParts.length > 1) {
         edgeLocation = rayParts[rayParts.length - 1].toUpperCase();
       }
     } else {
+      // Final fallback based on location
       if (country === "FR") {
-        edgeLocation = city === "Paris" ? "CDG" : "CDG";
+        edgeLocation = city === "Paris" ? "CDG" : "MRS";
       } else if (country === "GB" || country === "UK") {
         edgeLocation = "LHR";
       } else if (country === "DE") {
@@ -421,11 +497,18 @@ export async function handleNetworkInfo(request: Request, env: CloudflareEnv): P
       }
     }
 
+    // Get HTTP protocol from request.cf
+    let httpProtocol = "Unknown";
+    if (request.cf?.httpProtocol && typeof request.cf.httpProtocol === "string") {
+      httpProtocol = request.cf.httpProtocol;
+    }
+
     // Detect timezone based on country and region
     const timezone = getTimezoneFromLocation(country, region, city);
 
     const networkInfo: NetworkInfo = {
       ip,
+      httpProtocol,
       country,
       city,
       region,

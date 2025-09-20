@@ -41,6 +41,11 @@ export interface Device {
     os?: string;
     os_version?: string;
     version?: string;
+    device_type?: string;
+    profile_name?: string;
+    service_mode_v2?: {
+      mode?: string;
+    };
   };
 }
 
@@ -59,10 +64,19 @@ export interface PostureData {
   result?: PostureCheck[] | { [key: string]: PostureCheck };
 }
 
+export interface WarpModeInfo {
+  mode: string;
+  profileName: string;
+  serviceMode: string | null;
+  deviceType: string | null;
+  clientVersion: string | null;
+}
+
 export interface UserData {
   identity?: Identity;
   device?: Device;
   posture?: PostureData;
+  warpMode?: WarpModeInfo;
 }
 
 export interface LoginEvent {
@@ -85,6 +99,7 @@ export interface LoginEvent {
 
 export interface NetworkInfo {
   ip?: string;
+  httpProtocol?: string;
   country?: string;
   city?: string;
   region?: string;
