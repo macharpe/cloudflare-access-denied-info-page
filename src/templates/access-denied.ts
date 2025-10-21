@@ -1442,8 +1442,8 @@ body{
 
     return new Response(html, {
       headers: {
-        "Content-Type": "text/html",
-        "Cache-Control": "no-cache, no-store, must-revalidate",
+        "Content-Type": "text/html; charset=utf-8",
+        "Cache-Control": "private, max-age=60",  // 1 minute browser cache
         "Permissions-Policy": "camera=(), microphone=(), geolocation=(), interest-cohort=()",
         "X-Content-Type-Options": "nosniff",
         "X-Frame-Options": "DENY",
@@ -1471,8 +1471,8 @@ export async function handleJavaScript(request: Request, env: CloudflareEnv): Pr
     return new Response(jsContent, {
       headers: {
         ...corsHeaders,
-        "Content-Type": "application/javascript",
-        "Cache-Control": "no-cache, no-store, must-revalidate",
+        "Content-Type": "application/javascript; charset=utf-8",
+        "Cache-Control": "public, max-age=3600, immutable",  // 1 hour cache, immutable
       },
     });
 

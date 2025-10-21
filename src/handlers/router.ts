@@ -8,12 +8,12 @@ import {
 } from "./api";
 import { generateAccessDeniedPage, handleJavaScript } from "../templates/access-denied";
 
-export async function handleRequest(request: Request, env: CloudflareEnv): Promise<Response> {
+export async function handleRequest(request: Request, env: CloudflareEnv, ctx: ExecutionContext): Promise<Response> {
   const url = new URL(request.url);
 
   // API endpoints
   if (url.pathname === "/api/userdetails") {
-    return handleUserDetails(request, env);
+    return handleUserDetails(request, env, ctx);
   }
 
   if (url.pathname === "/api/history") {

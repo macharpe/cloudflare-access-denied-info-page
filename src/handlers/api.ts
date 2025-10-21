@@ -130,7 +130,7 @@ function getMexicoTimezone(region: string): string {
   return "America/Mexico_City"; // Central time, most common
 }
 
-export async function handleUserDetails(request: Request, env: CloudflareEnv): Promise<Response> {
+export async function handleUserDetails(request: Request, env: CloudflareEnv, ctx: ExecutionContext): Promise<Response> {
   const corsHeaders = getCorsHeaders(request, env);
 
   if (request.method === "OPTIONS") {
@@ -143,6 +143,25 @@ export async function handleUserDetails(request: Request, env: CloudflareEnv): P
       status: 401,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
+  }
+
+  // Workers Cache API implementation
+  const cache = (caches as any).default as Cache;
+
+  // Create user-specific cache key using token hash
+  const encoder = new TextEncoder();
+  const data = encoder.encode(accessToken);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  const cacheKey = new Request(`https://cache.internal/userdetails/${hashHex}`);
+
+  // Try cache first
+  const cachedResponse = await cache.match(cacheKey);
+  if (cachedResponse) {
+    const clonedResponse = new Response(cachedResponse.body, cachedResponse);
+    clonedResponse.headers.set('x-cache-status', 'HIT');
+    return clonedResponse;
   }
 
   let deviceId = getDeviceIdFromToken(accessToken);
@@ -268,9 +287,19 @@ export async function handleUserDetails(request: Request, env: CloudflareEnv): P
       warpMode: warpModeInfo,
     };
 
-    return new Response(JSON.stringify(combinedData), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    const finalResponse = new Response(JSON.stringify(combinedData), {
+      headers: {
+        ...corsHeaders,
+        "Content-Type": "application/json",
+        "Cache-Control": "private, max-age=30",  // 30s browser cache
+        "x-cache-status": "MISS"
+      },
     });
+
+    // Store in Workers Cache API (non-blocking)
+    ctx.waitUntil(cache.put(cacheKey, finalResponse.clone()));
+
+    return finalResponse;
   } catch (_error) {
     return new Response(
       JSON.stringify({ error: `Internal Server Error: ${(_error as Error).message}` }),
@@ -290,7 +319,14 @@ export async function handleHistoryRequest(request: Request, env: CloudflareEnv)
   }
 
   try {
-    const userDetailsResponse = await handleUserDetails(request, env);
+    // Create a mock ExecutionContext for internal call
+    const mockCtx = {
+      waitUntil: (promise: Promise<any>) => promise,
+      passThroughOnException: () => {},
+      props: {},
+    } as unknown as ExecutionContext;
+
+    const userDetailsResponse = await handleUserDetails(request, env, mockCtx);
 
     if (userDetailsResponse.status !== 200) {
       return new Response(JSON.stringify({ error: "Failed to get user details" }), {
@@ -407,7 +443,11 @@ export async function handleHistoryRequest(request: Request, env: CloudflareEnv)
     }));
 
     return new Response(JSON.stringify({ loginHistory: enhancedLoginEvents }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: {
+        ...corsHeaders,
+        "Content-Type": "application/json",
+        "Cache-Control": "private, max-age=30"  // 30 seconds browser cache
+      },
     });
   } catch (_error) {
     return new Response(
@@ -521,7 +561,11 @@ export async function handleNetworkInfo(request: Request, env: CloudflareEnv): P
     };
 
     return new Response(JSON.stringify(networkInfo), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: {
+        ...corsHeaders,
+        "Content-Type": "application/json",
+        "Cache-Control": "private, max-age=30"  // 30 seconds browser cache
+      },
     });
   } catch (_error) {
     return new Response(JSON.stringify({ error: "Failed to fetch network information" }), {
@@ -547,7 +591,11 @@ export async function handleEnvRequest(request: Request, env: CloudflareEnv): Pr
     };
 
     return new Response(JSON.stringify(envVars), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: {
+        ...corsHeaders,
+        "Content-Type": "application/json",
+        "Cache-Control": "public, max-age=3600, s-maxage=7200"  // 1hr browser, 2hr edge
+      },
     });
   } catch (_error) {
     return new Response(JSON.stringify({ error: "Internal Server Error" }), {
@@ -628,7 +676,11 @@ export async function handleIdpDetailsRequest(request: Request, env: CloudflareE
     const idpDetails = await fetchIdpDetails(idpId, env);
 
     return new Response(JSON.stringify(idpDetails), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: {
+        ...corsHeaders,
+        "Content-Type": "application/json",
+        "Cache-Control": "public, max-age=3600, s-maxage=7200"  // 1hr browser, 2hr edge
+      },
     });
   } catch (_error) {
     return new Response(JSON.stringify({ error: "Failed to fetch IDP details" }), {
