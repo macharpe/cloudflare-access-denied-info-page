@@ -5,6 +5,50 @@ All notable changes to the Cloudflare Access Denied Information Page project wil
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2025-10-28
+
+### Added
+
+- Client-side `/cdn-cgi/trace` fetching for accurate WARP connection status detection
+- Real-time HTTP protocol detection (HTTP/2, HTTP/3) based on actual connection type
+- Remote Browser Isolation (RBI) status display in Connection Status section
+- Client Hints API integration for real OS version detection (bypasses frozen User-Agent)
+- In-memory IDP details caching with 1-hour TTL and LRU eviction (100 entry limit)
+- ETag support for `/api/env` and `/api/idpdetails` endpoints with 304 Not Modified responses
+- Favicon endpoint with 7-day caching and 204 No Content response
+- Mobile DNS-only mode inference for authenticated users without device enrollment
+
+### Changed
+
+- WARP mode detection now uses client-side trace endpoint instead of unreliable server-side flags
+- HTTP/3 protocol automatically displayed for active WARP tunnel connections
+- Gateway status detection improved with multi-source validation (trace endpoint + device API)
+- Device ID extraction enhanced with `device_sessions` array fallback support
+- WARP mode field now nullable (null = client-side determination required)
+- Public IP address displayed from client-side trace endpoint for accuracy
+- OS version detection prioritizes Client Hints API over frozen User-Agent string
+
+### Performance
+
+- IDP details API calls reduced via module-level in-memory cache
+- ETag-based conditional requests reduce bandwidth for static config endpoints
+- 304 Not Modified responses for unchanged `/api/env` and `/api/idpdetails`
+- Favicon request overhead eliminated with 7-day cache and 204 response
+
+### Technical
+
+- Async/await pattern for `displayDeviceInfo()`, `displayWarpInfo()`, `displayNetworkInfo()`
+- `fetchRealWarpStatus()` utility function for client-side trace endpoint queries
+- `getRealOSVersion()` utility function for Client Hints API integration
+- SHA-256 ETag generation for content validation
+- LRU cache eviction strategy for IDP details (FIFO with size limit)
+
+### Security
+
+- Client-side trace fetching preserves user's actual WARP connection context
+- No server-side WARP status fetch (avoids misleading connection state)
+- Private data remains isolated with user-specific cache keys
+
 ## [1.2.0] - 2025-10-21
 
 ### Added

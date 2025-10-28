@@ -2,6 +2,15 @@ import { CloudflareEnv, UserData, LoginEvent, NetworkInfo, IdpDetails } from "..
 import { getCorsHeaders } from "../utils/cors";
 import { extractAccessToken, getDeviceIdFromToken, fetchIdentity } from "../utils/auth";
 
+// In-memory cache for IDP details (module-level, survives across requests)
+interface CachedIdpData {
+  data: IdpDetails;
+  timestamp: number;
+}
+
+const idpCache = new Map<string, CachedIdpData>();
+const IDP_CACHE_TTL = 3600000; // 1 hour in milliseconds
+
 function getTimezoneFromLocation(country: string, region: string, city: string): string {
   // Major timezone mappings based on country/region/city
   const countryTimezones: { [key: string]: string } = {
@@ -151,16 +160,16 @@ export async function handleUserDetails(request: Request, env: CloudflareEnv, ct
   // Create user-specific cache key using token hash
   const encoder = new TextEncoder();
   const data = encoder.encode(accessToken);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
-  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  const hashHex = hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
   const cacheKey = new Request(`https://cache.internal/userdetails/${hashHex}`);
 
   // Try cache first
   const cachedResponse = await cache.match(cacheKey);
   if (cachedResponse) {
     const clonedResponse = new Response(cachedResponse.body, cachedResponse);
-    clonedResponse.headers.set('x-cache-status', 'HIT');
+    clonedResponse.headers.set("x-cache-status", "HIT");
     return clonedResponse;
   }
 
@@ -180,12 +189,19 @@ export async function handleUserDetails(request: Request, env: CloudflareEnv, ct
   }
 
   try {
+    // Note: WARP status is fetched client-side via /cdn-cgi/trace for accuracy
+    // Server-side fetch doesn't preserve user's WARP connection context
     const identityResponse = await fetchIdentity(request, env, accessToken);
     if (!identityResponse.ok) {
       return identityResponse;
     }
 
     const identityData: any = await identityResponse.json();
+
+    // Add extracted device ID to identity data if we found it in the token
+    if (deviceId && identityData.identity) {
+      identityData.identity.device_id = deviceId;
+    }
 
     // Only fetch device details if we have a device ID
     let deviceDetailsData: any = {};
@@ -215,7 +231,7 @@ export async function handleUserDetails(request: Request, env: CloudflareEnv, ct
 
     // Extract WARP mode information from device details
     const warpModeInfo = {
-      mode: "Unknown",
+      mode: null as string | null, // Will be determined client-side from /cdn-cgi/trace
       profileName: "Default",
       serviceMode: null as string | null,
       deviceType: null as string | null,
@@ -245,38 +261,31 @@ export async function handleUserDetails(request: Request, env: CloudflareEnv, ct
         warpModeInfo.clientVersion = device.version;
       }
 
-      // Determine user-friendly mode description
-      const isWarp = identityData?.is_warp || false;
-      const isGateway = identityData?.is_gateway || false;
+      // Determine user-friendly mode description based on device API data
+      // Note: We don't use identityData.is_warp/is_gateway as they're unreliable from server-side
+      // The client-side /cdn-cgi/trace fetch provides accurate WARP status
       const serviceModeV2 = device.service_mode_v2?.mode?.toLowerCase();
 
-      if (isGateway && isWarp) {
-        // Full WARP mode with Gateway
-        warpModeInfo.mode = "Gateway with WARP";
-      } else if (isGateway && !isWarp) {
+      // Primary mode detection from service_mode_v2
+      if (serviceModeV2 === "warp") {
+        // WARP tunnel mode - could be with or without Gateway
+        // Client-side will determine if Gateway is enabled
+        warpModeInfo.mode = null; // Let client-side determine from /cdn-cgi/trace
+      } else if (serviceModeV2 === "doh") {
         // DNS-only mode
         warpModeInfo.mode = "Gateway with DoH";
-      } else if (!isGateway && isWarp) {
-        // WARP only (consumer mode)
-        warpModeInfo.mode = "WARP (Consumer)";
       } else if (serviceModeV2 === "proxy") {
         // Proxy mode
         warpModeInfo.mode = "Proxy Mode";
       } else if (serviceModeV2 === "posture_only") {
         // Device information only mode
         warpModeInfo.mode = "Device Information Only";
-      } else if (serviceModeV2 === "warp" && !isGateway) {
-        // WARP without Gateway
-        warpModeInfo.mode = "WARP without Gateway";
-      } else if (serviceModeV2 === "doh") {
-        // DoH mode
-        warpModeInfo.mode = "Gateway with DoH";
-      } else if (!isWarp && !isGateway && device.id) {
-        // Device registered but not connected
-        warpModeInfo.mode = "Registered (Not Connected)";
+      } else if (device.id && !serviceModeV2) {
+        // Device registered but service mode not set
+        warpModeInfo.mode = null; // Let client-side determine
       } else {
-        // Fallback to basic status
-        warpModeInfo.mode = isWarp ? "WARP Connected" : "Disconnected";
+        // Unknown or not configured
+        warpModeInfo.mode = null; // Let client-side determine
       }
     }
 
@@ -590,10 +599,33 @@ export async function handleEnvRequest(request: Request, env: CloudflareEnv): Pr
       HISTORY_HOURS_BACK: env.HISTORY_HOURS_BACK || "2"
     };
 
-    return new Response(JSON.stringify(envVars), {
+    const content = JSON.stringify(envVars);
+
+    // Generate ETag from content hash
+    const encoder = new TextEncoder();
+    const data = encoder.encode(content);
+    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const etag = `"${hashArray.map(b => b.toString(16).padStart(2, "0")).join("").substring(0, 16)}"`;
+
+    // Check If-None-Match header for 304 Not Modified
+    const requestEtag = request.headers.get("If-None-Match");
+    if (requestEtag === etag) {
+      return new Response(null, {
+        status: 304,
+        headers: {
+          ...corsHeaders,
+          "ETag": etag,
+          "Cache-Control": "public, max-age=3600, s-maxage=7200",
+        },
+      });
+    }
+
+    return new Response(content, {
       headers: {
         ...corsHeaders,
         "Content-Type": "application/json",
+        "ETag": etag,
         "Cache-Control": "public, max-age=3600, s-maxage=7200"  // 1hr browser, 2hr edge
       },
     });
@@ -673,13 +705,76 @@ export async function handleIdpDetailsRequest(request: Request, env: CloudflareE
       });
     }
 
+    // Check in-memory cache first
+    const cached = idpCache.get(idpId);
+    if (cached && (Date.now() - cached.timestamp) < IDP_CACHE_TTL) {
+      const content = JSON.stringify(cached.data);
+
+      // Generate ETag from cached content
+      const encoder = new TextEncoder();
+      const data = encoder.encode(content);
+      const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      const etag = `"${hashArray.map(b => b.toString(16).padStart(2, "0")).join("").substring(0, 16)}"`;
+
+      // Check If-None-Match header for 304 Not Modified
+      const requestEtag = request.headers.get("If-None-Match");
+      if (requestEtag === etag) {
+        return new Response(null, {
+          status: 304,
+          headers: {
+            ...corsHeaders,
+            "ETag": etag,
+            "Cache-Control": "public, max-age=3600, s-maxage=7200",
+            "X-Cache-Status": "HIT-MEMORY-304",
+          },
+        });
+      }
+
+      return new Response(content, {
+        headers: {
+          ...corsHeaders,
+          "Content-Type": "application/json",
+          "ETag": etag,
+          "Cache-Control": "public, max-age=3600, s-maxage=7200",
+          "X-Cache-Status": "HIT-MEMORY",
+        },
+      });
+    }
+
+    // Fetch from API if not in cache or expired
     const idpDetails = await fetchIdpDetails(idpId, env);
 
-    return new Response(JSON.stringify(idpDetails), {
+    // Store in memory cache
+    idpCache.set(idpId, {
+      data: idpDetails,
+      timestamp: Date.now(),
+    });
+
+    // Limit cache size to prevent memory bloat (keep last 100 IDPs)
+    if (idpCache.size > 100) {
+      const firstKey = idpCache.keys().next().value;
+      if (firstKey) {
+        idpCache.delete(firstKey);
+      }
+    }
+
+    const content = JSON.stringify(idpDetails);
+
+    // Generate ETag from content
+    const encoder = new TextEncoder();
+    const data = encoder.encode(content);
+    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const etag = `"${hashArray.map(b => b.toString(16).padStart(2, "0")).join("").substring(0, 16)}"`;
+
+    return new Response(content, {
       headers: {
         ...corsHeaders,
         "Content-Type": "application/json",
-        "Cache-Control": "public, max-age=3600, s-maxage=7200"  // 1hr browser, 2hr edge
+        "ETag": etag,
+        "Cache-Control": "public, max-age=3600, s-maxage=7200",
+        "X-Cache-Status": "MISS-MEMORY",
       },
     });
   } catch (_error) {
