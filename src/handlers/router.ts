@@ -36,6 +36,16 @@ export async function handleRequest(request: Request, env: CloudflareEnv, ctx: E
     return handleJavaScript(request, env);
   }
 
+  // Favicon handler with long-term caching
+  if (url.pathname === "/favicon.ico") {
+    return new Response(null, {
+      status: 204,
+      headers: {
+        "Cache-Control": "public, max-age=604800, immutable", // 7 days
+      },
+    });
+  }
+
   // Main page and all other routes
   return generateAccessDeniedPage(request, env);
 }

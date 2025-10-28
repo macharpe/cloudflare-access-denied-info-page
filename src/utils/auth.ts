@@ -28,7 +28,22 @@ export function getDeviceIdFromToken(jwt: string): string | null {
       const decoded = JSON.parse(
         atob(payload.replace(/_/g, "/").replace(/-/g, "+"))
       );
-      return decoded.device_id || null;
+
+      // Try multiple JWT fields for device ID
+      // 1. Direct device_id field
+      if (decoded.device_id) {
+        return decoded.device_id;
+      }
+
+      // 2. device_sessions array (first session)
+      if (decoded.device_sessions && Array.isArray(decoded.device_sessions) && decoded.device_sessions.length > 0) {
+        const deviceSession = decoded.device_sessions[0];
+        if (deviceSession && deviceSession.device_id) {
+          return deviceSession.device_id;
+        }
+      }
+
+      return null;
     } catch (_error) {
       return null;
     }
@@ -52,6 +67,49 @@ export function getJWTTimingData(jwt: string): { iat?: number; exp?: number } | 
     }
   }
   return null;
+}
+
+export async function fetchWarpStatus(request: Request, env: CloudflareEnv, accessToken?: string): Promise<{ isWarp: boolean; isGateway: boolean }> {
+  const token = accessToken || extractAccessToken(request);
+
+  // Default to false if no token
+  if (!token) {
+    return { isWarp: false, isGateway: false };
+  }
+
+  const url = `https://${env.ORGANIZATION_NAME}.cloudflareaccess.com/cdn-cgi/trace`;
+
+  try {
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        Cookie: `CF_Authorization=${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      return { isWarp: false, isGateway: false };
+    }
+
+    const textResponse = await response.text();
+
+    // Parse trace response (format: key=value pairs separated by newlines)
+    const traceData = textResponse.split("\n").reduce((acc, line) => {
+      const [key, value] = line.split("=");
+      if (key && value) {
+        acc[key.trim()] = value.trim();
+      }
+      return acc;
+    }, {} as Record<string, string>);
+
+    return {
+      isWarp: traceData.warp === "on",
+      isGateway: traceData.gateway === "on",
+    };
+  } catch (_error) {
+    // If trace endpoint fails, default to false
+    return { isWarp: false, isGateway: false };
+  }
 }
 
 export async function fetchIdentity(request: Request, env: CloudflareEnv, accessToken?: string): Promise<Response> {

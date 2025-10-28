@@ -65,7 +65,7 @@ export interface PostureData {
 }
 
 export interface WarpModeInfo {
-  mode: string;
+  mode: string | null; // null means mode will be determined client-side from /cdn-cgi/trace
   profileName: string;
   serviceMode: string | null;
   deviceType: string | null;
