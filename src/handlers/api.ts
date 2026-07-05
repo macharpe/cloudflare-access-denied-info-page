@@ -207,35 +207,40 @@ export async function handleUserDetails(request: Request, env: CloudflareEnv, ct
     let deviceDetailsData: any = {};
     let devicePostureData: any = {};
 
-    if (deviceId && identityData.gateway_account_id) {
-      const deviceDetailsResponse = await fetchDeviceDetails(
-        identityData.gateway_account_id,
-        deviceId,
-        env
-      );
+    // Resolve the account ID to use for registrations API (prefer gateway_account_id, fall back to env.ACCOUNT_ID)
+    const resolvedAccountId = identityData.gateway_account_id || env.ACCOUNT_ID || "";
+
+    if (deviceId && resolvedAccountId) {
+      const [deviceDetailsResponse, devicePostureResponse, cf1ClientIps] = await Promise.all([
+        fetchDeviceDetails(resolvedAccountId, deviceId, env),
+        fetchDevicePosture(resolvedAccountId, deviceId, env),
+        fetchCf1ClientIps(resolvedAccountId, deviceId, env),
+      ]);
 
       if (deviceDetailsResponse.ok) {
         deviceDetailsData = await deviceDetailsResponse.json();
       }
 
-      const devicePostureResponse = await fetchDevicePosture(
-        identityData.gateway_account_id,
-        deviceId,
-        env
-      );
-
       if (devicePostureResponse.ok) {
         devicePostureData = await devicePostureResponse.json();
       }
+
+      // Attach CF One Client IPs to be merged into warpModeInfo below
+      (identityData as any).__cf1ClientIps = cf1ClientIps;
     }
 
     // Extract WARP mode information from device details
+    const cf1ClientIps: { virtualIpv4: string | null; virtualIpv6: string | null } =
+      (identityData as any).__cf1ClientIps || { virtualIpv4: null, virtualIpv6: null };
+
     const warpModeInfo = {
       mode: null as string | null, // Will be determined client-side from /cdn-cgi/trace
       profileName: "Default",
       serviceMode: null as string | null,
       deviceType: null as string | null,
       clientVersion: null as string | null,
+      virtualIpv4: cf1ClientIps.virtualIpv4,
+      virtualIpv6: cf1ClientIps.virtualIpv6,
     };
 
     if (deviceDetailsData?.result) {
@@ -814,6 +819,50 @@ async function fetchDeviceDetails(gatewayAccountId: string, deviceId: string, en
         headers: { "Content-Type": "application/json" },
       }
     );
+  }
+}
+
+/**
+ * Fetch Cloudflare One Client virtual IPv4 and IPv6 for a specific device.
+ * Uses GET /accounts/{id}/devices/registrations?device.id={deviceId}&status=active
+ * which accepts a Bearer token with Zero Trust Read permission.
+ * Returns the most recently seen active registration that has at least one IP assigned.
+ */
+async function fetchCf1ClientIps(
+  accountId: string,
+  deviceId: string,
+  env: CloudflareEnv
+): Promise<{ virtualIpv4: string | null; virtualIpv6: string | null }> {
+  if (!accountId || !deviceId || !env.BEARER_TOKEN) {
+    return { virtualIpv4: null, virtualIpv6: null };
+  }
+
+  try {
+    const url = `https://api.cloudflare.com/client/v4/accounts/${accountId}/devices/registrations?device.id=${encodeURIComponent(deviceId)}&status=active&per_page=10`;
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${env.BEARER_TOKEN}`,
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) return { virtualIpv4: null, virtualIpv6: null };
+
+    const data: any = await response.json();
+    const registrations: any[] = data.result || [];
+
+    // Pick the most recently seen registration that has at least one IP
+    const match = registrations
+      .filter((r: any) => r.virtual_ipv4 || r.virtual_ipv6)
+      .sort((a: any, b: any) => new Date(b.last_seen_at).getTime() - new Date(a.last_seen_at).getTime())[0];
+
+    return {
+      virtualIpv4: match?.virtual_ipv4 || null,
+      virtualIpv6: match?.virtual_ipv6 || null,
+    };
+  } catch {
+    return { virtualIpv4: null, virtualIpv6: null };
   }
 }
 
