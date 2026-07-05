@@ -70,6 +70,8 @@ export interface WarpModeInfo {
   serviceMode: string | null;
   deviceType: string | null;
   clientVersion: string | null;
+  virtualIpv4: string | null; // CF One Client virtual IPv4 from devices/registrations API
+  virtualIpv6: string | null; // CF One Client virtual IPv6 from devices/registrations API
 }
 
 export interface UserData {
