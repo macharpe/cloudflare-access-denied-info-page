@@ -85,6 +85,31 @@ graph TB
     P --> K
 ```
 
+## 🖥️ What the Page Shows
+
+The denied page renders six diagnostic tiles loaded in parallel:
+
+| Tile | Data source | Fields |
+|---|---|---|
+| 👤 **User Information** | `/api/userdetails` → identity | Name, Email, Username, IDP, Organization |
+| 💻 **Device Information** | `/api/userdetails` → device | Device ID, Model, Name, OS, OS Version |
+| 🌐 **Connection Status** | `/api/userdetails` → warpMode + client-side `/cdn-cgi/trace` | CF One Client Status, Gateway Status, RBI Status, Mode, Profile, Client Version, Service Mode, **CF One Client IPv4**, **CF One Client IPv6** |
+| 🌐 **Network Information** | `/api/networkinfo` + `/cdn-cgi/trace` | Public IP, HTTP Protocol, Country, Region, City, Edge Location, Browser |
+| ⚖️ **Device Compliance** | `/api/userdetails` → posture | Overall status, pass/fail counts, per-check results |
+| 👥 **Group Membership** | `/api/userdetails` → identity.groups | All groups, TARGET_GROUP highlighted as "Primary Group" |
+
+Plus a **Recent Access Attempts** history card showing the last failed login events with app name, timestamp, IP, and country.
+
+### CF One Client Virtual IPs
+
+The **Connection Status** tile displays the virtual IPv4 and IPv6 addresses assigned to the blocked device by Cloudflare One Client (formerly WARP). These are fetched server-side via:
+
+```
+GET /accounts/{account_id}/devices/registrations?device.id={device_id}&status=active
+```
+
+This uses the same `BEARER_TOKEN` with Zero Trust Read permission — no additional credentials required. The IPs are only shown when the device has an active CF One Client registration with virtual addresses assigned (i.e. the tunnel is enrolled). They are fetched in parallel with device details and posture checks, so there is no added latency.
+
 ## 🚀 Quick Start
 
 ### Prerequisites
@@ -154,6 +179,7 @@ Create a **Custom Token** in your Cloudflare dashboard with these **exact permis
 | IDP shows generic "SAML" instead of provider name | `Access: Organizations, Identity Providers, and Groups` read |
 | No device information | `Access: Device Posture` or `Zero Trust` read |
 | No login history / 500 errors | `Access: Audit Logs` read |
+| CF One Client IPs not showing | `Zero Trust` read (required for `GET /devices/registrations`) |
 | General 500 errors | Token expired or insufficient permissions |
 
 ## 🔗 Configuring Cloudflare Access Applications
@@ -263,7 +289,8 @@ src/
 
 - **TypeScript-First**: Full type safety with comprehensive interfaces
 - **Enhanced IDP Integration**: `fetchIdpDetails()` with fallback logic
-- **WARP Mode Detection**: Intelligent inference based on identity flags and device patterns
+- **CF One Client Mode Detection**: Intelligent inference based on identity flags and device patterns
+- **CF One Client Virtual IPs**: Displays virtual IPv4 and IPv6 assigned to the device via `GET /devices/registrations` API
 - **Professional UI Components**: S-Tier design with hover effects
 - **Expandable Components**: Group Membership and Device Compliance tiles
 - **Copy Functionality**: Complete user information extraction with visual feedback
@@ -320,7 +347,7 @@ The Worker exposes these internal endpoints:
 | Endpoint | Method | Description | Response |
 |----------|--------|-------------|----------|
 | `/` | GET | Main page with TypeScript UI components | HTML |
-| `/api/userdetails` | GET | Aggregated identity, device, and posture data | JSON |
+| `/api/userdetails` | GET | Aggregated identity, device, posture, and CF One Client IP data | JSON |
 | `/api/history` | GET | Recent access failures via GraphQL (configurable time range) | JSON |
 | `/api/networkinfo` | GET | Network and browser information | JSON |
 | `/api/env` | GET | Environment variables and theme configuration | JSON |
