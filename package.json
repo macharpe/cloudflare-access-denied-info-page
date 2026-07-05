@@ -1,6 +1,6 @@
 {
   "name": "access-denied-info-page",
-  "version": "1.0.0",
+  "version": "1.4.0",
   "type": "module",
   "private": true,
   "description": "Cloudflare Access Denied Information Page - Enterprise-grade access denied page with inline HTML/CSS/JS solution",

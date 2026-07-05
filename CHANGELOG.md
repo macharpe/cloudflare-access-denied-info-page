@@ -5,6 +5,29 @@ All notable changes to the Cloudflare Access Denied Information Page project wil
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2026-07-05
+
+### Added
+
+- CF One Client virtual IPv4 and IPv6 display in the **Connection Status** tile
+- `fetchCf1ClientIps()` in `api.ts` — calls `GET /accounts/{id}/devices/registrations?device.id={deviceId}&status=active` using the existing `BEARER_TOKEN` (no new credentials required)
+- `virtualIpv4` and `virtualIpv6` fields added to `WarpModeInfo` interface in `types/index.ts`
+- CF One Client IPs fetched in parallel with device details and posture checks via `Promise.all` (no added latency)
+- Troubleshooting entry in README for missing CF One Client IPs
+- Tile breakdown table in README documenting all 6 diagnostic cards and their fields
+
+### Changed
+
+- All WARP references renamed to Cloudflare One Client throughout README and Key Features section
+- `/api/userdetails` now also returns `virtualIpv4` and `virtualIpv6` in the `warpMode` object
+- Connection Status tile shows CF One Client IPv4 and IPv6 rows (conditionally rendered when IPs are present)
+
+### Technical
+
+- Uses `GET /devices/registrations?device.id=` API endpoint (modern replacement for deprecated `/teamnet/devices/ips`)
+- Most recently seen active registration is selected when a device has multiple registrations
+- Gracefully degrades — rows are omitted when no device ID is present or API returns no virtual IPs
+
 ## [1.3.0] - 2025-10-28
 
 ### Added
